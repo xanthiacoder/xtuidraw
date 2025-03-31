@@ -348,6 +348,7 @@ function drawTextColor(text, x, y, width, bgcolor)
 
 	-- draw background's background first with fillmax, half all RGB
 	-- draw background's background using rectangle
+  love.graphics.setFont ( monoFont )
 	love.graphics.setColor( bgcolor )
 	love.graphics.rectangle("fill", x*FONT_WIDTH, y*FONT_HEIGHT, width*FONT_WIDTH, FONT_HEIGHT)
 
