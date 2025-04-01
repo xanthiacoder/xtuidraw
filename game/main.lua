@@ -3,6 +3,8 @@ screen resolution = 1280 x 720 px
 screen chars = 160 x 45 (font)
 screen chars = 160 x 90 (font2x)
 
+NO R36S WRITE SUPPORT YET!
+
 ansiart dimensions:
 4x4 ?
 8x8 ?
@@ -13,12 +15,52 @@ ansiart dimensions:
 64x64
 ]]
 
+love.filesystem.setIdentity("XTUIdraw") -- for R36S file system compatibility
+
 https = nil
 local overlayStats = require("lib.overlayStats")
 local runtimeLoader = require("runtime.loader")
 
 local json = require("lib.json")
 local ansi = require("lib.ansi")
+
+local game = {}
+
+-- detect viewport
+game.width, game.height = love.graphics.getDimensions( )
+print("viewport: "..game.width.."x"..game.height)
+
+-- set default cursor coord
+game.cursorx = 1
+game.cursory = 1
+
+-- detect system OS
+game.os = love.system.getOS() -- "OS X", "Windows", "Linux", "Android" or "iOS"
+if love.filesystem.getUserDirectory( ) == "/home/ark/" then
+	game.os = "R36S"
+end
+print("systemOS: "..game.os)
+
+-- check / create file directories
+if love.filesystem.getInfo("autosave") == nil then
+  if game.os == "R36S" then
+    os.execute("mkdir " .. love.filesystem.getSaveDirectory()) -- OS creation
+    os.execute("mkdir " .. love.filesystem.getSaveDirectory() .. "//autosave")
+    print("R36S: created directory - autosave")
+  else
+    love.filesystem.createDirectory("autosave")
+    print("Created directory - autosave")
+  end
+end
+if love.filesystem.getInfo("bmp") == nil then
+  if game.os == "R36S" then
+    os.execute("mkdir " .. love.filesystem.getSaveDirectory() .. "//bmp")
+    print("R36S: created directory - bmp")
+  else
+    love.filesystem.createDirectory("bmp")
+    print("Created directory - bmp")
+  end
+end
 
 local selected = {
   color = color.white,
@@ -96,58 +138,53 @@ end
 
 function love.draw()
   -- Your game draw here
-  local mouse = {
-    x = math.floor(love.mouse.getX()/8),
-    y = math.floor(love.mouse.getY()/8)
-  }
 
-  love.graphics.setColor( color.brightblue )
-  for i = 1,16 do
-    love.graphics.print("1...5....|", monoFont2x, (i-1)*FONT2X_WIDTH*10, 0)
-  end
-  for i = 1,9 do
-    love.graphics.print("1\n2\n3\n4\n5\n6\n7\n8\n9\n-", monoFont2x, 0, (i-1)*FONT2X_HEIGHT*10)
-  end
-
+  -- draw the bitmap image to be traced
   love.graphics.setColor( color.white )
-  love.graphics.draw( bitmap, 80*FONT2X_WIDTH, 5*FONT2X_HEIGHT, 0, 8, 8 ) -- rotation=0, scalex=8, scaley=8
+  love.graphics.draw( bitmap, 0, 0, 0, 8, 8 ) -- rotation=0, scalex=8, scaley=8
 
+  -- render the art area
   for i = 1,16 do
-    love.graphics.print(ansiArt[i], monoFont2x, 80*FONT2X_WIDTH, (i+4)*FONT2X_HEIGHT)
+    love.graphics.print(ansiArt[i], monoFont2x, 0, (i-1)*FONT2X_HEIGHT)
   end
-
-  -- Using CoffeeMud's color codes
--- ^w :  White            ^W :  Grey
--- ^g :  Bright Green     ^G :  Green
--- ^b :  Bright Blue      ^B :  Blue
--- ^r :  Bright Red       ^R :  Red
--- ^y :  Bright Yellow    ^Y :  Yellow
--- ^c :  Bright Cyan      ^C :  Cyan
--- ^p :  Bright Magenta   ^P :  Magenta
--- ^k :  Black            ^K :  Black
-
-
-  love.graphics.printf(mouse.x.." x "..mouse.y.." ("..(mouse.x-79).." x "..(mouse.y-4)..")", monoFont, 10*FONT_WIDTH, 1*FONT_HEIGHT, 240, "left")
-  love.graphics.printf("This text is in monoFont2x.", monoFont2x, 10*FONT2X_WIDTH, 4*FONT2X_HEIGHT, 240, "left")
-  love.graphics.printf("F2: Load, F8: Save", monoFont, 10*FONT_WIDTH, 12*FONT_HEIGHT, 240, "left")
-
-  love.graphics.print("▄ █ ▀ ▌ ▐ ░ ▒ ▓", monoFont2x, 2*FONT2X_WIDTH, 11*FONT2X_HEIGHT)
-  love.graphics.print("○", monoFont2x, 2*FONT2X_WIDTH, 12*FONT2X_HEIGHT)
-  love.graphics.print("■", monoFont2x, 2*FONT2X_WIDTH, 13*FONT2X_HEIGHT)
-  love.graphics.print("▲ ▼ ► ◄", monoFont2x, 2*FONT2X_WIDTH, 14*FONT2X_HEIGHT)
-  love.graphics.print("╦ ╗ ╔ ═ ╩ ╝ ╚ ║ ╬ ╣ ╠ ╥ ╖ ╓ ╤ ╕ ╒ ┬ ┐ ┌ ─ ┴ ┘ └", monoFont2x, 2*FONT2X_WIDTH, 15*FONT2X_HEIGHT)
-  love.graphics.print("│ ┼ ┤ ├ ╨ ╜ ╙ ╧ ╛ ╘ ╫ ╢ ╟ ╪ ╡ ╞", monoFont2x, 2*FONT2X_WIDTH, 16*FONT2X_HEIGHT)
-
-  love.graphics.setColor(selected.color)
-  love.graphics.printf(selected.char, monoFont, 10*FONT_WIDTH, 10*FONT_HEIGHT, 32, "left")
 
   drawPalette(141, 4)
+
+  -- responsively draw game.statusbar according to cursor position
+  love.graphics.setColor( color.darkgrey )
+  if game.cursory*8 <= math.floor(game.height/2) then
+    -- cursor is in upper screen
+    love.graphics.rectangle("fill", 0, game.height-FONT_HEIGHT, game.width, FONT_HEIGHT)
+    love.graphics.setColor( color.black )
+    love.graphics.setFont(monoFont)
+    love.graphics.print("   "..game.statusbar, 0, game.height-FONT_HEIGHT)
+      -- show selected color and char
+    love.graphics.setColor(selected.color)
+    love.graphics.printf(selected.char, monoFont, FONT_WIDTH, game.height-FONT_HEIGHT, 16, "left")
+
+  else
+    -- cursor is in lower screen
+    love.graphics.rectangle("fill", 0, 0, game.width, FONT_HEIGHT)
+    love.graphics.setColor( color.black )
+    love.graphics.setFont(monoFont)
+    love.graphics.print("   "..game.statusbar, 0, 0)
+    -- show selected color and char
+    love.graphics.setColor(selected.color)
+    love.graphics.printf(selected.char, monoFont, FONT_WIDTH, 0, 16, "left")
+  end
+
+  -- draw cursor
+  love.graphics.setColor( color.white )
+  love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
 
   overlayStats.draw() -- Should always be called last
 end
 
 function love.update(dt)
   -- Your game update here
+  game.mousex = math.floor(love.mouse.getX()/8)+1 -- coords in font2x starting at 1x1
+  game.mousey = math.floor(love.mouse.getY()/8)+1 -- coords in font2x starting at 1x1
+  game.statusbar = game.cursorx..","..game.cursory.." ("..game.mousex..","..game.mousey..")"
   overlayStats.update(dt) -- Should always be called last
 end
 
@@ -159,17 +196,37 @@ function love.keypressed(key, scancode, isrepeat)
     overlayStats.handleKeyboard(key) -- Should always be called last
   end
 
+  -- W A S D for moving cursor
+  if key == "w" and game.cursory > 1 then
+    game.cursory = game.cursory - 1
+  end
+  if key == "s" and game.cursory < math.floor(game.height/8) then
+    game.cursory = game.cursory + 1
+  end
+  if key == "a" and game.cursorx > 1 then
+    game.cursorx = game.cursorx - 1
+  end
+  if key == "d" and game.cursorx < math.floor(game.width/8) then
+    game.cursorx = game.cursorx + 1
+  end
+
+  -- SPACE to draw colored char
+  if key == "space" then
+    ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
+    ansiArt[game.cursory][game.cursorx*2] = selected.char
+  end
+
   if key == "f2" then
     -- load ansiart
-    local tempData = love.filesystem.read("ansiart.xui")
+    local tempData = love.filesystem.read("ansiart.xtui")
     ansiArt = json.decode(tempData)
   end
 
   if key == "f8" then
     -- save ansiart
-    local success, message =love.filesystem.write("ansiart.xui", json.encode(ansiArt))
+    local success, message =love.filesystem.write("ansiart.xtui", json.encode(ansiArt))
     if success then
-	    print ('file created: ansiart.xui')
+	    print ('file created: ansiart.xtui')
     else
 	    print ('file not created: '..message)
     end
@@ -258,9 +315,9 @@ function love.mousepressed( x, y, button, istouch, presses )
   end
 
   -- mouse clicked in drawing area
-  if (mouse.x >= 1 and mouse.x <= 16) and (mouse.y >= 1 and mouse.y <= 16) then
-    ansiArt[mouse.y][(mouse.x*2)-1] = selected.color
-    ansiArt[mouse.y][mouse.x*2] = selected.char
+  if (game.mousex >= 1 and game.mousex <= 16) and (game.mousey >= 1 and game.mousey <= 16) then
+    ansiArt[game.mousey][(game.mousex*2)-1] = selected.color
+    ansiArt[game.mousey][game.mousex*2] = selected.char
   end
 
 end
