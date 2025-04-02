@@ -3,8 +3,6 @@ screen resolution = 1280 x 720 px
 screen chars = 160 x 45 (font)
 screen chars = 160 x 90 (font2x)
 
-NO R36S WRITE SUPPORT YET!
-
 ansiart dimensions:
 4x4 ?
 8x8 ?
@@ -56,6 +54,15 @@ if love.filesystem.getInfo("autosave") == nil then
     print("Created directory - autosave")
   end
 end
+if love.filesystem.getInfo("quicksave") == nil then
+  if game.os == "R36S" then
+    os.execute("mkdir " .. love.filesystem.getSaveDirectory() .. "//quicksave")
+    print("R36S: created directory - quicksave")
+  else
+    love.filesystem.createDirectory("quicksave")
+    print("Created directory - quicksave")
+  end
+end
 if love.filesystem.getInfo("bmp") == nil then
   if game.os == "R36S" then
     os.execute("mkdir " .. love.filesystem.getSaveDirectory() .. "//bmp")
@@ -63,6 +70,15 @@ if love.filesystem.getInfo("bmp") == nil then
   else
     love.filesystem.createDirectory("bmp")
     print("Created directory - bmp")
+  end
+end
+if love.filesystem.getInfo("ansiart") == nil then
+  if game.os == "R36S" then
+    os.execute("mkdir " .. love.filesystem.getSaveDirectory() .. "//ansiart")
+    print("R36S: created directory - ansiart")
+  else
+    love.filesystem.createDirectory("ansiart")
+    print("Created directory - ansiart")
   end
 end
 
@@ -200,25 +216,74 @@ function love.keypressed(key, scancode, isrepeat)
     overlayStats.handleKeyboard(key) -- Should always be called last
   end
 
-  -- W A S D for moving cursor
-  if key == "w" and game.cursory > 1 then
-    game.cursory = game.cursory - 1
-  end
-  if key == "s" and game.cursory < math.floor(game.height/8) and game.cursory < game.canvasy then
-    game.cursory = game.cursory + 1
-  end
-  if key == "a" and game.cursorx > 1 then
-    game.cursorx = game.cursorx - 1
-  end
-  if key == "d" and game.cursorx < math.floor(game.width/8) and game.cursorx < game.canvasx then
-    game.cursorx = game.cursorx + 1
+  -- input for R36S
+  if game.os == "R36S" then
+    -- W A S D for moving cursor
+    if key == "w" and game.cursory > 1 then
+      game.cursory = game.cursory - 1
+    end
+    if key == "s" and game.cursory < math.floor(game.height/8) and game.cursory < game.canvasy then
+      game.cursory = game.cursory + 1
+    end
+    if key == "a" and game.cursorx > 1 then
+      game.cursorx = game.cursorx - 1
+    end
+    if key == "d" and game.cursorx < math.floor(game.width/8) and game.cursorx < game.canvasx then
+      game.cursorx = game.cursorx + 1
+    end
+    -- (A) button to draw colored char
+    if key == "z" then
+      ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
+      ansiArt[game.cursory][game.cursorx*2] = selected.char
+    end
+    -- (B) button to clear char
+    if key == "lshift" then
+      ansiArt[game.cursory][(game.cursorx*2)-1] = color.darkgrey
+      ansiArt[game.cursory][game.cursorx*2] = "."
+    end
+    -- (X) button to eyedrop char
+    if key == "space" then
+      selected.char = ansiArt[game.cursory][game.cursorx*2]
+    end
+    -- (Y) button to eyedrop color
+    if key == "b" then
+      selected.color = ansiArt[game.cursory][(game.cursorx*2)-1]
+    end
+  else
+    -- input for everything else (computers)
+    -- arrow keys for moving cursor
+    if key == "up" and game.cursory > 1 then
+      game.cursory = game.cursory - 1
+    end
+    if key == "down" and game.cursory < math.floor(game.height/8) and game.cursory < game.canvasy then
+      game.cursory = game.cursory + 1
+    end
+    if key == "left" and game.cursorx > 1 then
+      game.cursorx = game.cursorx - 1
+    end
+    if key == "right" and game.cursorx < math.floor(game.width/8) and game.cursorx < game.canvasx then
+      game.cursorx = game.cursorx + 1
+    end
+    -- ralt (right option) to draw char
+    if key == "ralt" then
+      ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
+      ansiArt[game.cursory][game.cursorx*2] = selected.char
+    end
+    -- backspace to delete char
+    if key == "backspace" then
+      ansiArt[game.cursory][(game.cursorx*2)-1] = color.darkgrey
+      ansiArt[game.cursory][game.cursorx*2] = "."
+    end
+    -- lalt to eyedrop char
+    if key == "lalt" then
+      selected.char = ansiArt[game.cursory][game.cursorx*2]
+    end
+    -- lctrl to eyedrop color
+    if key == "lctrl" then
+      selected.color = ansiArt[game.cursory][(game.cursorx*2)-1]
+    end
   end
 
-  -- SPACE to draw colored char
-  if key == "space" then
-    ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
-    ansiArt[game.cursory][game.cursorx*2] = selected.char
-  end
 
   if key == "f2" then
     -- load ansiart
