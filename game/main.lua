@@ -34,6 +34,10 @@ print("viewport: "..game.width.."x"..game.height)
 game.cursorx = 1
 game.cursory = 1
 
+-- set default canvas size (16x16)
+game.canvasx = 16
+game.canvasy = 16
+
 -- detect system OS
 game.os = love.system.getOS() -- "OS X", "Windows", "Linux", "Android" or "iOS"
 if love.filesystem.getUserDirectory( ) == "/home/ark/" then
@@ -69,7 +73,7 @@ local selected = {
 
 local colorpalette = {}
 
--- 16x16 chars
+-- default canvas 16x16 chars
 local ansiArt = {}
 for i = 1,16 do
   ansiArt[i] = {
@@ -200,13 +204,13 @@ function love.keypressed(key, scancode, isrepeat)
   if key == "w" and game.cursory > 1 then
     game.cursory = game.cursory - 1
   end
-  if key == "s" and game.cursory < math.floor(game.height/8) then
+  if key == "s" and game.cursory < math.floor(game.height/8) and game.cursory < game.canvasy then
     game.cursory = game.cursory + 1
   end
   if key == "a" and game.cursorx > 1 then
     game.cursorx = game.cursorx - 1
   end
-  if key == "d" and game.cursorx < math.floor(game.width/8) then
+  if key == "d" and game.cursorx < math.floor(game.width/8) and game.cursorx < game.canvasx then
     game.cursorx = game.cursorx + 1
   end
 
