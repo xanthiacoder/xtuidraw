@@ -22,6 +22,29 @@ local runtimeLoader = require("runtime.loader")
 local json = require("lib.json")
 local ansi = require("lib.ansi")
 
+
+-- TEXT_BLOCKS = "▄ █ ▀ ▌ ▐ ░ ▒ ▓" -- cp437
+-- TEXT_SYMBOLS = "○ ■ ▲ ▼ ► ◄" -- cp437
+-- TEXT_BOX = "╦ ╗ ╔ ═ ╩ ╝ ╚ ║ ╬ ╣ ╠ ╥ ╖ ╓ ╤ ╕ ╒ ┬ ┐ ┌ ─ ┴ ┘ └ │ ┼ ┤ ├ ╨ ╜ ╙ ╧ ╛ ╘ ╫ ╢ ╟ ╪ ╡ ╞" -- cp437
+
+-- user monoFont to display, 176 x 224 px
+local charTable = {
+  [1] = {"█","▓","▒","░","▄","▀","▌","▐","/","|","\\"},
+  [2] = {"○","■","▲","▼","►","◄","~","!","@","#","$"},
+  [3] = {"╔","═","╦","╩","╗","║","╠","╬","╣","╚","╝"},
+  [4] = {"┌","─","┬","┴","┐","│","├","┼","┤","└","┘"},
+  [5] = {"╓","╒","╤","╥","╨","╧","╥","╤","╖","╕","."},
+  [6] = {"╫","╪","╟","╞","╢","╡","╙","╘","╜","╛",","},
+  [7]= {"!","@","#","$","%","^","&","*","(",")"," "},
+  [8] = {"a","b","c","d","e","f","g","h","i","j","k"},
+  [9] = {"l","m","n","o","p","q","r","s","t","u","v"},
+  [10] = {"w","x","y","z","-","=","_","+","[","]","'"},
+  [11]= {"A","B","C","D","E","F","G","H","I","J","K"},
+  [12]= {"L","M","N","O","P","Q","R","S","T","U","V"},
+  [13]= {"W","X","Y","Z","<",">",",",".",";",":","?"},
+  [14]= {"1","2","3","4","5","6","7","8","9","0","`"},
+}
+
 local game = {}
 
 -- detect viewport
@@ -35,6 +58,10 @@ game.cursory = 1
 -- set default canvas size (16x16)
 game.canvasx = 16
 game.canvasy = 16
+
+-- set default char table selected [1..11][1..14]
+game.charx = 1
+game.chary = 1
 
 -- detect system OS
 game.os = love.system.getOS() -- "OS X", "Windows", "Linux", "Android" or "iOS"
@@ -125,6 +152,22 @@ function drawPalette( x, y )
 
 end
 
+function drawCharTable()
+  local x = math.floor((game.width - 176)/2)
+  local y = math.floor((game.height - 224)/2)
+  love.graphics.setColor(color.darkgrey)
+  for i = 1,14 do
+    for j = 1,11 do
+      love.graphics.print(charTable[i][j], x + (((j-1)*2)*FONT_WIDTH), y + ((i-1)*FONT_HEIGHT) )
+    end
+  end
+
+  -- highlight current selection
+  love.graphics.setColor( color.white )
+  love.graphics.rectangle("line", x+(((game.charx-1)*2)*FONT_WIDTH), y+((game.chary-1)*FONT_HEIGHT), FONT_WIDTH, FONT_HEIGHT)
+
+end
+
 
 function love.load()
   https = runtimeLoader.loadHTTPS()
@@ -197,6 +240,12 @@ function love.draw()
   love.graphics.setColor( color.white )
   love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
 
+
+  -- draw charTable if selector keys trigger
+  if love.keyboard.isDown("lshift", "rshift", "lgui", "rgui") then
+    drawCharTable()
+  end
+
   overlayStats.draw() -- Should always be called last
 end
 
@@ -249,6 +298,24 @@ function love.keypressed(key, scancode, isrepeat)
     if key == "b" then
       selected.color = ansiArt[game.cursory][(game.cursorx*2)-1]
     end
+    -- arrow keys to select char
+    if key == "up" and game.chary > 1 then
+      game.chary = game.chary - 1
+      selected.char = charTable[game.chary][game.charx]
+    end
+    if key == "down" and game.chary < 14 then
+      game.chary = game.chary + 1
+      selected.char = charTable[game.chary][game.charx]
+    end
+    if key == "left" and game.charx > 1 then
+      game.charx = game.charx - 1
+      selected.char = charTable[game.chary][game.charx]
+    end
+    if key == "right" and game.charx < 11 then
+      game.charx = game.charx + 1
+      selected.char = charTable[game.chary][game.charx]
+    end
+
   else
     -- input for everything else (computers)
     -- arrow keys for moving cursor
@@ -282,8 +349,25 @@ function love.keypressed(key, scancode, isrepeat)
     if key == "lctrl" then
       selected.color = ansiArt[game.cursory][(game.cursorx*2)-1]
     end
+    -- lshift / rshift to select charTable row (game.chary)
+    if key == "lshift" and game.chary > 1 then
+      game.chary = game.chary - 1
+      selected.char = charTable[game.chary][game.charx]
+    end
+    if key == "rshift" and game.chary < 14 then
+      game.chary = game.chary + 1
+      selected.char = charTable[game.chary][game.charx]
+    end
+    -- lgui / rgui to select charTable column (game.charx)
+    if key == "lgui" and game.charx > 1 then
+      game.charx = game.charx - 1
+      selected.char = charTable[game.chary][game.charx]
+    end
+    if key == "rgui" and game.charx < 11 then
+      game.charx = game.charx + 1
+      selected.char = charTable[game.chary][game.charx]
+    end
   end
-
 
   if key == "f2" then
     -- load ansiart
