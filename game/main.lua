@@ -63,6 +63,9 @@ game.canvasy = 16
 game.charx = 1
 game.chary = 1
 
+-- set default color number selected
+game.colorSelected = 15
+
 -- detect system OS
 game.os = love.system.getOS() -- "OS X", "Windows", "Linux", "Android" or "iOS"
 if love.filesystem.getUserDirectory( ) == "/home/ark/" then
@@ -315,6 +318,15 @@ function love.keypressed(key, scancode, isrepeat)
       game.charx = game.charx + 1
       selected.char = charTable[game.chary][game.charx]
     end
+    -- L1 (l) to toggle colors
+    if key == "l" then
+      if game.colorSelected == 15 then
+        game.colorSelected = 0
+      else
+        game.colorSelected = game.colorSelected + 1
+      end
+      selected.color = color[game.colorSelected]
+    end
 
   else
     -- input for everything else (computers)
@@ -367,6 +379,17 @@ function love.keypressed(key, scancode, isrepeat)
       game.charx = game.charx + 1
       selected.char = charTable[game.chary][game.charx]
     end
+
+        -- L1 (l) to toggle colors (for testing)
+        if key == "l" then
+          if game.colorSelected == 15 then
+            game.colorSelected = 0
+          else
+            game.colorSelected = game.colorSelected + 1
+          end
+          selected.color = color[game.colorSelected]
+        end
+
   end
 
   if key == "f2" then

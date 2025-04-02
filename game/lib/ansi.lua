@@ -65,7 +65,7 @@ color = {
 function restoreAnsiDefaults()
 	-- use this to restore ansi defaults
 
-	--	eg. 	love.graphics.setColor( color.white )
+	--[[	eg. 	love.graphics.setColor( color.white )
 	color = {
 		black 			  = {   0,   0,   0, 1 },
 		red 			    = { 0.5,   0,   0, 1 },
@@ -85,6 +85,29 @@ function restoreAnsiDefaults()
 		brightmagenta = {   1,   0,   1, 1 },
 		brightcyan 		= {   0,   1,   1, 1 },
 		white 			  = {   1,   1,   1, 1 },
+	}
+]]
+
+-- eg. 	love.graphics.setColor( color.white ) or color[0..15]
+color = {
+	black 			  = {   0,   0,   0, 1 }, [0] 			= {   0,   0,   0, 1 },
+	red 			    = { 0.5,   0,   0, 1 },	[1] 			= { 0.5,   0,   0, 1 },
+	green 			  = {   0, 0.5,   0, 1 },	[2] 			= {   0, 0.5,   0, 1 },
+	yellow 			  = { 0.5, 0.5,   0, 1 },	[3] 			= { 0.5, 0.5,   0, 1 },
+	blue 			    = {   0,   0, 0.5, 1 },	[4] 			= {   0,   0, 0.5, 1 },
+	magenta			  = { 0.5,   0, 0.5, 1 },	[5]				= { 0.5,   0, 0.5, 1 },
+	cyan 			    = {   0, 0.5, 0.5, 1 },	[6] 			= {   0, 0.5, 0.5, 1 },
+	gray	 		    = { 0.7, 0.7, 0.7, 1 },	[7]		 		= { 0.7, 0.7, 0.7, 1 },
+	grey	 		    = { 0.7, 0.7, 0.7, 1 },
+	darkgray		  = { 0.5, 0.5, 0.5, 1 },	[8]				= { 0.5, 0.5, 0.5, 1 },
+	darkgrey		  = { 0.5, 0.5, 0.5, 1 },
+	brightred		  = {   1,   0,   0, 1 },	[9]				= {   1,   0,   0, 1 },
+	brightgreen		= {   0,   1,   0, 1 },	[10]			= {   0,   1,   0, 1 },
+	brightyellow 	= {   1,   1,   0, 1 },	[11]		 	= {   1,   1,   0, 1 },
+	brightblue 		= {   0,   0,   1, 1 },	[12]	 		= {   0,   0,   1, 1 },
+	brightmagenta = {   1,   0,   1, 1 },	[13]		 	= {   1,   0,   1, 1 },
+	brightcyan 		= {   0,   1,   1, 1 },	[14]	 		= {   0,   1,   1, 1 },
+	white 			  = {   1,   1,   1, 1 },	[15] 			= {   1,   1,   1, 1 },
 	}
 
 end
