@@ -23,7 +23,6 @@ local runtimeLoader = require("runtime.loader")
 local json = require("lib.json")
 local ansi = require("lib.ansi")
 
-
 -- TEXT_BLOCKS = "▄ █ ▀ ▌ ▐ ░ ▒ ▓" -- cp437
 -- TEXT_SYMBOLS = "○ ■ ▲ ▼ ► ◄" -- cp437
 -- TEXT_BOX = "╦ ╗ ╔ ═ ╩ ╝ ╚ ║ ╬ ╣ ╠ ╥ ╖ ╓ ╤ ╕ ╒ ┬ ┐ ┌ ─ ┴ ┘ └ │ ┼ ┤ ├ ╨ ╜ ╙ ╧ ╛ ╘ ╫ ╢ ╟ ╪ ╡ ╞" -- cp437
@@ -128,7 +127,11 @@ end
 local selected = {
   color = color.white,
   char  = "█",
+  bmp   = "",
+  bmpnumber = 1,
 }
+
+local bmpFiles = love.filesystem.getDirectoryItems( "bmp" ) -- table of files in the bmp directory
 
 local colorpalette = {}
 
@@ -185,6 +188,7 @@ function drawCharTable()
 
   -- highlight current selection
   love.graphics.setColor( color.white )
+  love.graphics.setLineWidth(1)
   love.graphics.rectangle("line", x+(((game.charx-1)*2)*FONT_WIDTH), y+((game.chary-1)*FONT_HEIGHT), FONT_WIDTH, FONT_HEIGHT)
 
 end
@@ -287,14 +291,20 @@ function love.draw()
 
   -- draw cursor
   love.graphics.setColor( color.pulsingwhite )
+  love.graphics.setLineWidth(1)
   love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
+
+  -- draw selectBmp (noscroll list) if selected.bmp = ""
+  if selected.bmp == "" then
+    drawScrollList(" Select a BMP ", bmpFiles, "UP/DOWN: Select  RETURN: Confirm ", selected.bmpnumber, 0, 20, 60, color.brightblue, color.blue)
+  end
 
   -- draw mouse pointer as a text triangle
   love.graphics.setFont(monoFont2x)
   love.graphics.setColor(color.white)
   love.graphics.print("▲",love.mouse.getX()-4,love.mouse.getY())
 
-  overlayStats.draw() -- Should always be called last
+--  overlayStats.draw() -- Should always be called last
 end
 
 function love.update(dt)
@@ -324,7 +334,7 @@ function love.keypressed(key, scancode, isrepeat)
   if key == "escape" and love.system.getOS() ~= "Web" then
     love.event.quit()
   else
-    overlayStats.handleKeyboard(key) -- Should always be called last
+--    overlayStats.handleKeyboard(key) -- Should always be called last
   end
 
   -- input for R36S
@@ -389,20 +399,33 @@ function love.keypressed(key, scancode, isrepeat)
 
   else
     -- input for everything else (computers)
-    -- arrow keys for moving cursor
-    if key == "up" and game.cursory > 1 then
-      game.cursory = game.cursory - 1
+    -- arrow keys for moving cursor when BMP selected
+    if selected.bmp ~= "" then
+      if key == "up" and game.cursory > 1 then
+        game.cursory = game.cursory - 1
+      end
+      if key == "down" and game.cursory < math.floor(game.height/8) and game.cursory < game.canvasy then
+        game.cursory = game.cursory + 1
+      end
+      if key == "left" and game.cursorx > 1 then
+        game.cursorx = game.cursorx - 1
+      end
+      if key == "right" and game.cursorx < math.floor(game.width/8) and game.cursorx < game.canvasx then
+        game.cursorx = game.cursorx + 1
+      end
+    else
+      -- cursor for selecting BMP
+      if key == "up" and selected.bmpnumber > 1 then
+        selected.bmpnumber = selected.bmpnumber - 1
+        bitmap = love.graphics.newImage( "bmp/"..bmpFiles[selected.bmpnumber])
+      end
+      if key == "down" and selected.bmpnumber < #bmpFiles then
+        selected.bmpnumber = selected.bmpnumber + 1
+        bitmap = love.graphics.newImage( "bmp/"..bmpFiles[selected.bmpnumber])
+      end
     end
-    if key == "down" and game.cursory < math.floor(game.height/8) and game.cursory < game.canvasy then
-      game.cursory = game.cursory + 1
-    end
-    if key == "left" and game.cursorx > 1 then
-      game.cursorx = game.cursorx - 1
-    end
-    if key == "right" and game.cursorx < math.floor(game.width/8) and game.cursorx < game.canvasx then
-      game.cursorx = game.cursorx + 1
-    end
-    -- ralt (right option) to draw char
+
+      -- ralt (right option) to draw char
     if key == "ralt" then
       ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
       ansiArt[game.cursory][game.cursorx*2] = selected.char
@@ -410,7 +433,7 @@ function love.keypressed(key, scancode, isrepeat)
     -- backspace to delete char
     if key == "backspace" then
       ansiArt[game.cursory][(game.cursorx*2)-1] = color.darkgrey
-      ansiArt[game.cursory][game.cursorx*2] = "."
+      ansiArt[game.cursory][game.cursorx*2] = " "
     end
     -- lalt to eyedrop char
     if key == "lalt" then
@@ -460,8 +483,15 @@ function love.keypressed(key, scancode, isrepeat)
     ansiArt = json.decode(tempData)
   end
 
+  if key == "f3" then
+    bmpFiles = love.filesystem.getDirectoryItems( "bmp" )
+    print(#bmpFiles.." files in bmp folder")
+    table.sort(bmpFiles)
+  end
+
   if key == "f8" then
-    saveData("quicksave.xtui","quicksave")
+    local files = love.filesystem.getDirectoryItems( "quicksave" )
+    saveData("quicksave_"..(#files)..".xtui","quicksave") -- running numbers for quicksaves
   end
 
   if key == "f12" then

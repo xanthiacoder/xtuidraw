@@ -662,6 +662,7 @@ function drawFatBox(title, x, y, width, height, fgcolor, bgcolor)
 
 	-- draw corners
 	love.graphics.setColor( fgcolor )
+  love.graphics.setFont (monoFont)
 	love.graphics.printf("▄", x*FONT_WIDTH, y*FONT_HEIGHT, width*FONT_WIDTH, 'left')
 	love.graphics.printf("▀", x*FONT_WIDTH, (y+height-1)*FONT_HEIGHT, width*FONT_WIDTH, 'left')
 	love.graphics.printf("▄", (x+width-1)*FONT_WIDTH, y*FONT_HEIGHT, width*FONT_WIDTH, 'left')
@@ -680,8 +681,8 @@ function drawFatBox(title, x, y, width, height, fgcolor, bgcolor)
 
 	-- draw title if it's not blank
 	if title ~= "" then
-		love.graphics.setColor( fgcolor )
-		drawText("["..title.."]", x+2, y, string.len(title)+2, fgcolor, bgcolor, 1, 1)
+		love.graphics.setColor( color.white )
+		drawText("["..title.."]", x+2, y, string.len(title)+2, color.white, bgcolor, 1, 1)
 	end
 
 end -- drawFatBox
@@ -712,9 +713,9 @@ function drawInputTip(text, x, y, framecolor, bgcolor)
 
 	love.graphics.setColor( framecolor )
 	for i = 0,textLen+1 do
-		love.graphics.printf("▄", (x+i)*FONT_WIDTH, (y-1)*FONT_HEIGHT, width*FONT_WIDTH, 'left')
-		love.graphics.printf("█", (x+i)*FONT_WIDTH, y*FONT_HEIGHT, width*FONT_WIDTH, 'left')
-		love.graphics.printf("▀", (x+i)*FONT_WIDTH, (y+1)*FONT_HEIGHT, width*FONT_WIDTH, 'left')
+		love.graphics.printf("▄", (x+i)*FONT_WIDTH, (y-1)*FONT_HEIGHT, 8*FONT_WIDTH, 'left')
+		love.graphics.printf("█", (x+i)*FONT_WIDTH, y*FONT_HEIGHT, 8*FONT_WIDTH, 'left')
+		love.graphics.printf("▀", (x+i)*FONT_WIDTH, (y+1)*FONT_HEIGHT, 8*FONT_WIDTH, 'left')
 	end
 
 	drawTextColor(text, x+1, y, textLen, bgcolor)
