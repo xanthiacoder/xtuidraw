@@ -14,6 +14,7 @@ ansiart dimensions:
 ]]
 
 love.filesystem.setIdentity("XTUIdraw") -- for R36S file system compatibility
+love.mouse.setVisible( false ) -- make mouse cursor invis, use text cursor
 
 https = nil
 local overlayStats = require("lib.overlayStats")
@@ -46,6 +47,9 @@ local charTable = {
 }
 
 local game = {}
+
+-- set game timers
+game.timeThisSession = 0
 
 -- detect viewport
 game.width, game.height = love.graphics.getDimensions( )
@@ -111,6 +115,15 @@ if love.filesystem.getInfo("ansiart") == nil then
     print("Created directory - ansiart")
   end
 end
+if love.filesystem.getInfo("timelapse") == nil then
+  if game.os == "R36S" then
+    os.execute("mkdir " .. love.filesystem.getSaveDirectory() .. "//timelapse")
+    print("R36S: created directory - timelapse")
+  else
+    love.filesystem.createDirectory("timelapse")
+    print("Created directory - timelapse")
+  end
+end
 
 local selected = {
   color = color.white,
@@ -161,8 +174,13 @@ function drawCharTable()
   love.graphics.setColor(color.darkgrey)
   for i = 1,14 do
     for j = 1,11 do
+      love.graphics.setColor(color.darkgrey)
+      love.graphics.setFont(monoFont)
       love.graphics.print(charTable[i][j], x + (((j-1)*2)*FONT_WIDTH), y + ((i-1)*FONT_HEIGHT) )
     end
+  love.graphics.setColor(selected.color)
+  love.graphics.setFont(monoFont4s)
+  love.graphics.print(selected.char, game.width/2 - 18 , y - FONT_HEIGHT*5 )
   end
 
   -- highlight current selection
@@ -171,12 +189,32 @@ function drawCharTable()
 
 end
 
+---@param filename string
+---@param directory string
+function saveData( filename , directory )
+    if game.os ~= "R36S" then
+      -- save ansiart
+      local success, message =love.filesystem.write(directory.."/"..filename, json.encode(ansiArt))
+      if success then
+	      print ('file created: '..directory.."/"..filename)
+      else
+	      print ('file not created: '..message)
+      end
+    else
+      -- save for R36S
+      local f = io.open(love.filesystem.getSaveDirectory().."//"..directory.."/"..filename, "w")
+      f:write(json.encode(ansiArt))
+      f:close()
+    end
+end
 
 function love.load()
   https = runtimeLoader.loadHTTPS()
   -- Your game load here
   monoFont = love.graphics.newFont("fonts/"..FONT, FONT_SIZE)
+  monoFont4s = love.graphics.newFont("fonts/"..FONT, FONT_SIZE*4)
   monoFont2x = love.graphics.newFont("fonts/"..FONT2X, FONT2X_SIZE)
+  monoFont2x4s = love.graphics.newFont("fonts/"..FONT2X, FONT2X_SIZE*4)
   love.graphics.setFont( monoFont )
   print(monoFont:getWidth("█"))
   print(monoFont:getHeight())
@@ -203,7 +241,7 @@ function drawXTUI16(xtui, x, y)
 end
 
 function love.draw()
-  -- Your game draw here
+  -- Your game draw here (from bottom to top layer)
 
   -- draw the bitmap image to be traced
   love.graphics.setColor( color.white )
@@ -239,24 +277,45 @@ function love.draw()
     love.graphics.printf(selected.char, monoFont, FONT_WIDTH, 0, 16, "left")
   end
 
-  -- draw cursor
-  love.graphics.setColor( color.white )
-  love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
-
-
-  -- draw charTable if selector keys trigger
-  if love.keyboard.isDown("lshift", "rshift", "lgui", "rgui") then
+  -- draw charTable if reveal key is held
+  if love.keyboard.isDown("rshift") and game.os ~= "R36S" then
     drawCharTable()
   end
+  if love.keyboard.isDown("lshift") and game.os == "R36S" then
+    drawCharTable()
+  end
+
+  -- draw cursor
+  love.graphics.setColor( color.pulsingwhite )
+  love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
+
+  -- draw mouse pointer as a text triangle
+  love.graphics.setFont(monoFont2x)
+  love.graphics.setColor(color.white)
+  love.graphics.print("▲",love.mouse.getX()-4,love.mouse.getY())
 
   overlayStats.draw() -- Should always be called last
 end
 
 function love.update(dt)
   -- Your game update here
+
+  -- game timers
+  game.timeThisSession = game.timeThisSession + dt
+  if math.floor(game.timeThisSession)%2 == 1 then
+    -- odd seconds
+    color.pulsingwhite = {1,1,1,(game.timeThisSession%1)} -- using modulo for fading alpha channel
+  else
+    -- even seconds
+    color.pulsingwhite = {1,1,1,1-(game.timeThisSession%1)} -- using modulo for fading alpha channel
+  end
+  -- set coords
   game.mousex = math.floor(love.mouse.getX()/8)+1 -- coords in font2x starting at 1x1
   game.mousey = math.floor(love.mouse.getY()/8)+1 -- coords in font2x starting at 1x1
-  game.statusbar = game.cursorx..","..game.cursory.." ("..game.mousex..","..game.mousey..")"
+
+  -- set statusbar
+  game.statusbar = game.cursorx..","..game.cursory.." ("..game.mousex..","..game.mousey..") Time:"..math.floor(game.timeThisSession)
+
   overlayStats.update(dt) -- Should always be called last
 end
 
@@ -361,23 +420,26 @@ function love.keypressed(key, scancode, isrepeat)
     if key == "lctrl" then
       selected.color = ansiArt[game.cursory][(game.cursorx*2)-1]
     end
-    -- lshift / rshift to select charTable row (game.chary)
-    if key == "lshift" and game.chary > 1 then
-      game.chary = game.chary - 1
-      selected.char = charTable[game.chary][game.charx]
-    end
-    if key == "rshift" and game.chary < 14 then
-      game.chary = game.chary + 1
-      selected.char = charTable[game.chary][game.charx]
-    end
-    -- lgui / rgui to select charTable column (game.charx)
-    if key == "lgui" and game.charx > 1 then
-      game.charx = game.charx - 1
-      selected.char = charTable[game.chary][game.charx]
-    end
-    if key == "rgui" and game.charx < 11 then
-      game.charx = game.charx + 1
-      selected.char = charTable[game.chary][game.charx]
+    -- char selection with rshift held, and WASD for selecting
+    if love.keyboard.isDown("rshift") then
+      -- w / s to select charTable row (game.chary)
+      if key == "w" and game.chary > 1 then
+        game.chary = game.chary - 1
+        selected.char = charTable[game.chary][game.charx]
+      end
+      if key == "s" and game.chary < 14 then
+        game.chary = game.chary + 1
+        selected.char = charTable[game.chary][game.charx]
+      end
+      -- a / d to select charTable column (game.charx)
+      if key == "a" and game.charx > 1 then
+        game.charx = game.charx - 1
+        selected.char = charTable[game.chary][game.charx]
+      end
+      if key == "d" and game.charx < 11 then
+        game.charx = game.charx + 1
+        selected.char = charTable[game.chary][game.charx]
+      end
     end
 
         -- L1 (l) to toggle colors (for testing)
@@ -399,13 +461,7 @@ function love.keypressed(key, scancode, isrepeat)
   end
 
   if key == "f8" then
-    -- save ansiart
-    local success, message =love.filesystem.write("ansiart.xtui", json.encode(ansiArt))
-    if success then
-	    print ('file created: ansiart.xtui')
-    else
-	    print ('file not created: '..message)
-    end
+    saveData("quicksave.xtui","quicksave")
   end
 
   if key == "f12" then

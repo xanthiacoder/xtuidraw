@@ -11,16 +11,12 @@
 -- drawKeyboard(prompt, case)
 ---------------------------------------------------------------------------------------
 
--- monotype font is JetBrainsMonoNL-Regular.ttf
--- font size is 13pt
--- font width is 8 pixels, font height is 17 pixels
--- screen 1280 x 720 pixels
--- 160 x 42 chars
-
 local json = require("lib.json")
 
+-- text samples LÖVE
 TEXT_WIDTH = "0---------1---------2---------3---------4---------5---------6---------7---------8---------9---------0---------1---------2---------3---------4---------5---------"
 TEXT_HEIGHT = "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9"
+TEXT_RANDOM = "◘ ◙ ☺ ☻ ☼ ♀ ♂ ♠ ♣ ♥ ♦ ♪ ♫ ⌂ ≥ ≤ ≡ ∞ ∩ ₧ ⁿ ← ↑ → ↓ ↔ ↕ ↨ √ Ω Φ δ ε π τ φ • ‼ Σ Θ ½ ¼ § ° ≈ " -- not tested
 TEXT_BLOCKS = "▄ █ ▀ ▌ ▐ ░ ▒ ▓" -- cp437
 TEXT_SYMBOLS = "○ ■ ▲ ▼ ► ◄" -- cp437
 TEXT_BOX = "╦ ╗ ╔ ═ ╩ ╝ ╚ ║ ╬ ╣ ╠ ╥ ╖ ╓ ╤ ╕ ╒ ┬ ┐ ┌ ─ ┴ ┘ └ │ ┼ ┤ ├ ╨ ╜ ╙ ╧ ╛ ╘ ╫ ╢ ╟ ╪ ╡ ╞" -- cp437
@@ -38,6 +34,31 @@ FONT_HEIGHT = 16
 FONT2X_SIZE = 8
 FONT2X_WIDTH = 8
 FONT2X_HEIGHT = 8
+
+--[[ ASCII Diagram for R36S Input Controls
+
+123456789|123456789|123456789|123456789|123456789|123456789|123456789|123456789|
+2
+3
+4         l            x            y            r
+5      [ L 1 ]      [ L 2 ]      [ R 2 ]      [ R 1 ]
+6     -------------------------------------------------
+7
+8         w                                   space
+9        |^|                                   (X)
+-     a[<   >]d                            b(Y)   (A)z
+1        |v|                                   (B)
+2         s                                  lshift
+3                   [select]  [ start ]
+4                     esc      return
+5        up                                  mouse up
+6       x^^^x                                 x^^^x
+7  left( (@) )right                     mouse( (@) )mouse
+8       x___x                           left  x___x right
+9       down                                  mouse
+-                                             down
+
+]]
 
 --[[	eg. 	love.graphics.setColor( color.white ) or color[0..15]
 color = {
@@ -62,9 +83,6 @@ color = {
 	}
 ]]--
 
-function restoreAnsiDefaults()
-	-- use this to restore ansi defaults
-
 	--[[	eg. 	love.graphics.setColor( color.white )
 	color = {
 		black 			  = {   0,   0,   0, 1 },
@@ -87,6 +105,9 @@ function restoreAnsiDefaults()
 		white 			  = {   1,   1,   1, 1 },
 	}
 ]]
+
+function restoreAnsiDefaults()
+	-- use this to restore ansi defaults
 
 -- eg. 	love.graphics.setColor( color.white ) or color[0..15]
 color = {
