@@ -15,6 +15,7 @@ ansiart dimensions:
 
 love.filesystem.setIdentity("XTUIdraw") -- for R36S file system compatibility
 love.mouse.setVisible( false ) -- make mouse cursor invis, use text cursor
+love.graphics.setDefaultFilter("nearest", "nearest") -- for nearest neighbour, pixelart style
 
 https = nil
 local overlayStats = require("lib.overlayStats")
