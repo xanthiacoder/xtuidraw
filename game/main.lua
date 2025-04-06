@@ -130,6 +130,7 @@ local selected = {
   char  = "█",
   bmp   = "",
   bmpnumber = 1,
+  viewport = 1,
 }
 
 local bmpFiles = love.filesystem.getDirectoryItems( "bmp" ) -- table of files in the bmp directory
@@ -248,6 +249,20 @@ end
 function love.draw()
   -- Your game draw here (from bottom to top layer)
 
+  -- set viewport
+  if selected.viewport == 1 then
+    love.graphics.translate( 0, 0 )
+  end
+  if selected.viewport == 2 then
+    love.graphics.translate( 640, 0 )
+  end
+  if selected.viewport == 3 then
+    love.graphics.translate( 0, 480 )
+  end
+  if selected.viewport == 4 then
+    love.graphics.translate( 640, 480 )
+  end
+
   -- draw the bitmap image to be traced
   love.graphics.setColor( color.white )
   love.graphics.draw( bitmap, 0, 0, 0, 8, 8 ) -- rotation=0, scalex=8, scaley=8
@@ -297,13 +312,25 @@ function love.draw()
 
   -- draw selectBmp (noscroll list) if selected.bmp = ""
   if selected.bmp == "" then
-    drawScrollList(" Select a BMP ", bmpFiles, "UP/DOWN: Select  RETURN: Confirm ", selected.bmpnumber, 0, 20, 60, color.brightblue, color.blue)
+    drawScrollList(" Select a BMP ", bmpFiles, "UP/DOWN: Select  RETURN: Confirm ", selected.bmpnumber, 0, 30, 60, color.brightblue, color.blue)
   end
 
   -- draw mouse pointer as a text triangle
   love.graphics.setFont(monoFont2x)
   love.graphics.setColor(color.white)
   love.graphics.print("▲",love.mouse.getX()-4,love.mouse.getY())
+
+  -- draw viewports (debug only)
+  love.graphics.setColor(color.brightcyan)
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle("line",0,0,640,480)
+  love.graphics.printf("Viewport 1", monoFont, 0, 480/2, 640,"center")
+  love.graphics.rectangle("line",640,0,640,480)
+  love.graphics.printf("Viewport 2", monoFont, 640, 480/2, 640,"center")
+  love.graphics.rectangle("line",0,480,640,240)
+  love.graphics.printf("Viewport 3", monoFont, 0, (240/2)+480, 640,"center")
+  love.graphics.rectangle("line",640,480,640,240)
+  love.graphics.printf("Viewport 4", monoFont, 640, (240/2)+480, 640,"center")
 
 --  overlayStats.draw() -- Should always be called last
 end
@@ -326,6 +353,13 @@ function love.update(dt)
 
   -- set statusbar
   game.statusbar = game.cursorx..","..game.cursory.." ("..game.mousex..","..game.mousey..") Time:"..math.floor(game.timeThisSession)
+  if game.os ~= "R36S" then
+    -- statusbar for all other platforms
+    game.statusbar = game.statusbar .. " ["..game.os.."]"
+  else
+    -- statusbar for R36S
+    game.statusbar = game.statusbar .. " ["..game.os.."] L1:Change Color R1:Change Viewport"
+  end
 
   overlayStats.update(dt) -- Should always be called last
 end
@@ -396,6 +430,15 @@ function love.keypressed(key, scancode, isrepeat)
         game.colorSelected = game.colorSelected + 1
       end
       selected.color = color[game.colorSelected]
+    end
+
+    -- R1 (r) to toggle viewports
+    if key == "r" then
+      if selected.viewport == 4 then
+        selected.viewport = 1
+      else
+        selected.viewport = selected.viewport + 1
+      end
     end
 
   else
