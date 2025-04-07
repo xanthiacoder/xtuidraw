@@ -249,19 +249,19 @@ end
 function love.draw()
   -- Your game draw here (from bottom to top layer)
 
-  -- set viewport
-  if selected.viewport == 1 then
-    love.graphics.translate( 0, 0 )
-  end
-  if selected.viewport == 2 then
-    love.graphics.translate( 640, 0 )
-  end
-  if selected.viewport == 3 then
-    love.graphics.translate( 0, 480 )
-  end
-  if selected.viewport == 4 then
-    love.graphics.translate( 640, 480 )
-  end
+    -- must be the start of love.draw, love.graphics.translate also resets at each love.draw
+    if selected.viewport == 1 then
+      love.graphics.translate( 0, 0 )
+    end
+    if selected.viewport == 2 then
+      love.graphics.translate( -640, 0 )
+    end
+    if selected.viewport == 3 then
+      love.graphics.translate( 0, -480 )
+    end
+    if selected.viewport == 4 then
+      love.graphics.translate( -640, -480 )
+    end
 
   -- draw the bitmap image to be traced
   love.graphics.setColor( color.white )
@@ -312,7 +312,7 @@ function love.draw()
 
   -- draw selectBmp (noscroll list) if selected.bmp = ""
   if selected.bmp == "" then
-    drawScrollList(" Select a BMP ", bmpFiles, "UP/DOWN: Select  RETURN: Confirm ", selected.bmpnumber, 0, 30, 60, color.brightblue, color.blue)
+    drawScrollList(" Select a BMP ", bmpFiles, "UP/DOWN: Select  RETURN: Confirm ", selected.bmpnumber, 0, 23, 60, color.brightblue, color.blue)
   end
 
   -- draw mouse pointer as a text triangle
@@ -327,10 +327,30 @@ function love.draw()
   love.graphics.printf("Viewport 1", monoFont, 0, 480/2, 640,"center")
   love.graphics.rectangle("line",640,0,640,480)
   love.graphics.printf("Viewport 2", monoFont, 640, 480/2, 640,"center")
+  -- viewport 3 and 4 use different fonts
+  if game.os == "R36S" then
+    love.graphics.setFont(monoFont)
+  else
+    love.graphics.setFont(monoFont2x)
+  end
   love.graphics.rectangle("line",0,480,640,240)
   love.graphics.printf("Viewport 3", monoFont, 0, (240/2)+480, 640,"center")
+  for i = 1,29 do
+    if game.os == "R36S" then
+      love.graphics.printf("Test 3",monoFont,0, 480+((i-1)*FONT_HEIGHT),640,"left")
+    else
+      love.graphics.printf("Test 3",monoFont2x,0, 480+((i-1)*FONT2X_HEIGHT),640,"left")
+    end
+  end
   love.graphics.rectangle("line",640,480,640,240)
   love.graphics.printf("Viewport 4", monoFont, 640, (240/2)+480, 640,"center")
+  for i = 1,29 do
+    if game.os == "R36S" then
+      love.graphics.printf("Test 4",monoFont,640, 480+((i-1)*FONT_HEIGHT),640,"left")
+    else
+      love.graphics.printf("Test 4",monoFont2x,640, 480+((i-1)*FONT2X_HEIGHT),640,"left")
+    end
+  end
 
 --  overlayStats.draw() -- Should always be called last
 end
