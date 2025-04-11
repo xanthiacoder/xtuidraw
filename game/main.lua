@@ -3,7 +3,9 @@ screen resolution = 1280 x 720 px
 screen chars = 160 x 45 (font)
 screen chars = 160 x 90 (font2x)
 
-ansiart dimensions:
+ansicanvas dimensions:
+should be variable to allow making UI assets
+- set max as 160x90 ? (max resolution 1280x720)
 4x4 ?
 8x8 ?
 16x16
@@ -137,27 +139,18 @@ local bmpFiles = love.filesystem.getDirectoryItems( "bmp" ) -- table of files in
 
 local colorpalette = {}
 
--- default canvas 16x16 chars
+-- initialize max ansiArt 160x90 chars
+MAX_CANVAS_X = 160
+MAX_CANVAS_Y = 90
 local ansiArt = {}
-for i = 1,16 do
-  ansiArt[i] = {
-    [1] = color.darkgrey, [2] = ".",
-    [3] = color.darkgrey, [4] = ".",
-    [5] = color.darkgrey, [6] = ".",
-    [7] = color.darkgrey, [8] = ".",
-    [9] = color.darkgrey, [10] = ".",
-    [11] = color.darkgrey,[12] = ".",
-    [13] = color.darkgrey,[14] = ".",
-    [15] = color.darkgrey,[16] = ".",
-    [17] = color.darkgrey,[18] = ".",
-    [19] = color.darkgrey,[20] = ".",
-    [21] = color.darkgrey,[22] = ".",
-    [23] = color.darkgrey,[24] = ".",
-    [25] = color.darkgrey,[26] = ".",
-    [27] = color.darkgrey,[28] = ".",
-    [29] = color.darkgrey,[30] = ".",
-    [31] = color.darkgrey,[32] = ".",
-  }
+-- i = Canvas row, Y
+-- j = Canvas Column, X
+for i = 1,MAX_CANVAS_Y do
+  ansiArt[i] = {}
+  for j = 1,MAX_CANVAS_X do
+    ansiArt[i][j+(j-1)] = color.darkgrey
+    ansiArt[i][j*2] = "."
+  end
 end
 
 ---@param x integer position in chars (0..159) font2x size
@@ -268,8 +261,14 @@ function love.draw()
   love.graphics.draw( bitmap, 0, 0, 0, 8, 8 ) -- rotation=0, scalex=8, scaley=8
 
   -- render the art area
-  for i = 1,16 do
-    love.graphics.print(ansiArt[i], monoFont2x, 0, (i-1)*FONT2X_HEIGHT)
+  for i = 1,game.canvasy do
+    for j = 1,game.canvasx do
+      tempText = {
+        ansiArt[i][j+(j-1)],
+        ansiArt[i][j*2],
+      }
+      love.graphics.print(tempText, monoFont2x, (j-1)*FONT2X_WIDTH, (i-1)*FONT2X_HEIGHT)
+    end
   end
 
   drawPalette(141, 4)
@@ -463,7 +462,7 @@ function love.keypressed(key, scancode, isrepeat)
 
   else
     -- input for everything else (computers)
-    -- arrow keys for moving cursor when BMP selected
+    -- arrow keys for moving cursor when BMP already selected
     if selected.bmp ~= "" then
       if key == "up" and game.cursory > 1 then
         game.cursory = game.cursory - 1
@@ -489,7 +488,24 @@ function love.keypressed(key, scancode, isrepeat)
       end
     end
 
-      -- ralt (right option) to draw char
+    -- "[" / "]" to increase / decrease canvas size (x)
+    if key == "[" and game.canvasx > 1 then
+      game.canvasx = game.canvasx - 1
+    end
+    if key == "]" and game.canvasx < MAX_CANVAS_X then
+      game.canvasx = game.canvasx + 1
+    end
+
+    -- ";" / "'" to increase / decrease canvas size (y)
+    if key == ";" and game.canvasy > 1 then
+      game.canvasy = game.canvasy - 1
+    end
+    if key == "'" and game.canvasx < MAX_CANVAS_Y then
+      game.canvasy = game.canvasy + 1
+    end
+
+
+    -- ralt (right option) to draw char
     if key == "ralt" then
       ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
       ansiArt[game.cursory][game.cursorx*2] = selected.char
