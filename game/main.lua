@@ -149,7 +149,7 @@ for i = 1,MAX_CANVAS_Y do
   ansiArt[i] = {}
   for j = 1,MAX_CANVAS_X do
     ansiArt[i][j+(j-1)] = color.darkgrey
-    ansiArt[i][j*2] = "."
+    ansiArt[i][j*2] = " "
   end
 end
 
@@ -239,6 +239,37 @@ function drawXTUI16(xtui, x, y)
   end
 end
 
+-- draw checkerboard base of canvas
+---@param x integer number of columns
+---@param y integer number of rows
+---@param width integer width of font
+---@param height integer height of font
+function drawCheckerboard( x , y , width, height)
+
+  local drawBright = true -- draw a bright box
+
+  for i = 1,y do -- iterate over rows
+    if (i%2) == 0 then -- odd numbered row detected
+      drawBright = true
+    else
+      drawBright = false
+    end
+    for j = 1,x do -- iterate over columns
+      if drawBright then
+        -- draw bright box
+        love.graphics.setColor(color.white)
+        love.graphics.rectangle("fill", 0+(j-1)*width, 0+(i-1)*height, width, height)
+        drawBright = false
+      else
+        -- draw dark box
+        love.graphics.setColor(color.darkgrey)
+        love.graphics.rectangle("fill", 0+(j-1)*width, 0+(i-1)*height, width, height)
+        drawBright = true
+      end
+    end
+  end
+end
+
 function love.draw()
   -- Your game draw here (from bottom to top layer)
 
@@ -255,6 +286,9 @@ function love.draw()
     if selected.viewport == 4 then
       love.graphics.translate( -640, -480 )
     end
+
+  -- draw base checkerboard based on canvas size
+  drawCheckerboard( game.canvasx, game.canvasy, FONT2X_WIDTH, FONT2X_HEIGHT)
 
   -- draw the bitmap image to be traced
   love.graphics.setColor( color.white )
@@ -356,6 +390,14 @@ end
 
 function love.update(dt)
   -- Your game update here
+
+  -- mouse button detections
+  if love.mouse.isDown(1) then
+    if (game.mousex >= 1 and game.mousex <= game.canvasx) and (game.mousey >= 1 and game.mousey <= game.canvasy) then
+      ansiArt[game.mousey][(game.mousex*2)-1] = selected.color
+      ansiArt[game.mousey][game.mousex*2] = selected.char
+    end
+  end
 
   -- game timers
   game.timeThisSession = game.timeThisSession + dt
@@ -500,7 +542,7 @@ function love.keypressed(key, scancode, isrepeat)
     if key == ";" and game.canvasy > 1 then
       game.canvasy = game.canvasy - 1
     end
-    if key == "'" and game.canvasx < MAX_CANVAS_Y then
+    if key == "'" and game.canvasy < MAX_CANVAS_Y then
       game.canvasy = game.canvasy + 1
     end
 
@@ -657,10 +699,10 @@ function love.mousepressed( x, y, button, istouch, presses )
   end
 
   -- mouse clicked in drawing area
-  if (game.mousex >= 1 and game.mousex <= 16) and (game.mousey >= 1 and game.mousey <= 16) then
-    ansiArt[game.mousey][(game.mousex*2)-1] = selected.color
-    ansiArt[game.mousey][game.mousex*2] = selected.char
-  end
+--  if (game.mousex >= 1 and game.mousex <= game.canvasx) and (game.mousey >= 1 and game.mousey <= game.canvasy) then
+--    ansiArt[game.mousey][(game.mousex*2)-1] = selected.color
+--    ansiArt[game.mousey][game.mousex*2] = selected.char
+--  end
 
 end
 
