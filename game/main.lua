@@ -221,7 +221,7 @@ function love.load()
   print(monoFont2x:getWidth("█"))
   print(monoFont2x:getHeight())
 
-  bitmap = love.graphics.newImage( "img/Item__01.png")
+  -- bitmap = love.graphics.newImage( "img/Item__01.png")
 
   local tempData = love.filesystem.read("xtui/colorpalette_16.xtui")
   colorpalette = json.decode(tempData)
@@ -291,8 +291,10 @@ function love.draw()
   drawCheckerboard( game.canvasx, game.canvasy, FONT2X_WIDTH, FONT2X_HEIGHT)
 
   -- draw the bitmap image to be traced
-  love.graphics.setColor( color.white )
-  love.graphics.draw( bitmap, 0, 0, 0, 8, 8 ) -- rotation=0, scalex=8, scaley=8
+  if bitmap ~= nil then
+    love.graphics.setColor( color.white )
+    love.graphics.draw( bitmap, 0, 0, 0, 8, 8 ) -- rotation=0, scalex=8, scaley=8
+  end
 
   -- render the art area
   for i = 1,game.canvasy do
