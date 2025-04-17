@@ -191,20 +191,58 @@ end
 ---@param filename string
 ---@param directory string
 function saveData( filename , directory )
-    if game.os ~= "R36S" then
-      -- save ansiart
-      local success, message =love.filesystem.write(directory.."/"..filename, json.encode(ansiArt))
-      if success then
-	      print ('file created: '..directory.."/"..filename)
-      else
-	      print ('file not created: '..message)
-      end
-    else
-      -- save for R36S
-      local f = io.open(love.filesystem.getSaveDirectory().."//"..directory.."/"..filename, "w")
-      f:write(json.encode(ansiArt))
-      f:close()
+
+  -- initialize max ansiFlat (1D array) for compatibility
+  local ansiFlat = {}
+  for i = 1,(game.canvasy*game.canvasx)*2 do
+    ansiFlat[i] = ""
+  end
+
+  -- place \n at end of each row
+  for i = 1,game.canvasy do
+    ansiArt[i][game.canvasx*2] = ansiArt[i][game.canvasx*2] .. "\n"
+  end
+
+  -- create 1D from 2D array for compatibility
+  for i = 1,(game.canvasy*game.canvasx)*2 do
+    local intergal, fractional = math.modf(i/(game.canvasx*2))
+    intergal = intergal + 1
+    fractional = i%(game.canvasx*2)
+    if fractional == 0 then
+      fractional = game.canvasx*2
+      intergal = intergal - 1
     end
+    print(intergal ..","..fractional)
+    ansiFlat[i] = ansiArt[intergal][fractional]
+  end
+
+  -- save regular 2D table
+  if game.os ~= "R36S" then
+    -- save ansiart
+    local success, message =love.filesystem.write(directory.."/"..filename, json.encode(ansiArt))
+    if success then
+	    print ('file created: '..directory.."/"..filename)
+    else
+	    print ('file not created: '..message)
+    end
+
+  -- save ansiflat
+    local success, message =love.filesystem.write(directory.."/"..filename.."flat", json.encode(ansiFlat))
+    if success then
+	    print ('file created: '..directory.."/"..filename.."flat")
+    else
+	    print ('file not created: '..message)
+    end
+  else
+    -- save ansiart for R36S
+    local f = io.open(love.filesystem.getSaveDirectory().."//"..directory.."/"..filename, "w")
+    f:write(json.encode(ansiArt))
+    f:close()
+    -- save ansiflat for R36S
+    local f = io.open(love.filesystem.getSaveDirectory().."//"..directory.."/"..filename.."flat", "w")
+    f:write(json.encode(ansiArt))
+    f:close()
+  end
 end
 
 function love.load()
