@@ -74,6 +74,7 @@ game.chary = 1
 
 -- set default color number selected
 game.colorSelected = 15
+game.bgcolorSelected = 0
 
 -- detect system OS
 game.os = love.system.getOS() -- "OS X", "Windows", "Linux", "Android" or "iOS"
@@ -257,6 +258,8 @@ end
 function love.load()
   https = runtimeLoader.loadHTTPS()
   -- Your game load here
+
+  -- fonts
   monoFont = love.graphics.newFont("fonts/"..FONT, FONT_SIZE)
   monoFont4s = love.graphics.newFont("fonts/"..FONT, FONT_SIZE*4)
   monoFont2x = love.graphics.newFont("fonts/"..FONT2X, FONT2X_SIZE)
@@ -268,7 +271,19 @@ function love.load()
   print(monoFont2x:getWidth("█"))
   print(monoFont2x:getHeight())
 
-  -- bitmap = love.graphics.newImage( "img/Item__01.png")
+  -- buttons
+  button = {
+    [1]  = json.decode(love.filesystem.read("xtui/button-01.xtui")),
+    [2]  = json.decode(love.filesystem.read("xtui/button-02.xtui")),
+    [3]  = json.decode(love.filesystem.read("xtui/button-03.xtui")),
+    [4]  = json.decode(love.filesystem.read("xtui/button-04.xtui")),
+    [5]  = json.decode(love.filesystem.read("xtui/button-05.xtui")),
+    [6]  = json.decode(love.filesystem.read("xtui/button-06.xtui")),
+    [7]  = json.decode(love.filesystem.read("xtui/button-07.xtui")),
+    [8]  = json.decode(love.filesystem.read("xtui/button-08.xtui")),
+    [9]  = json.decode(love.filesystem.read("xtui/button-09.xtui")),
+    [10] = json.decode(love.filesystem.read("xtui/button-10.xtui")),
+  }
 
   local tempData = love.filesystem.read("xtui/colorpalette_16.xtui")
   colorpalette = json.decode(tempData)
@@ -317,6 +332,26 @@ function drawCheckerboard( x , y , width, height)
   end
 end
 
+---draw solid color background
+---@param color integer 0..15 are regular colors, 16 is transparent
+function drawBackground(bgcolor)
+  if bgcolor == 16 then
+    love.graphics.setColor(0,0,0,0) -- transparent
+  else
+    love.graphics.setColor(color[bgcolor])
+  end
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle( "fill", 0, 0, (game.canvasx)*FONT2X_WIDTH, (game.canvasy)*FONT2X_HEIGHT)
+end
+
+function drawButtons()
+  love.graphics.setColor(color.white)
+  for i = 1,10 do
+    love.graphics.print(button[i],0+((i-1)*128),480)
+  end
+end
+
+
 function love.draw()
   -- Your game draw here (from bottom to top layer)
 
@@ -336,6 +371,10 @@ function love.draw()
 
   -- draw base checkerboard based on canvas size
   drawCheckerboard( game.canvasx, game.canvasy, FONT2X_WIDTH, FONT2X_HEIGHT)
+
+  -- draw solid color background on canvas size
+  drawBackground(game.bgcolorSelected)
+
 
   -- draw the bitmap image to be traced
   if bitmap ~= nil then
@@ -423,7 +462,7 @@ function love.draw()
     love.graphics.setFont(monoFont2x)
   end
   love.graphics.rectangle("line",0,480,640,240)
-  love.graphics.printf("Viewport 3", monoFont, 0, (240/2)+480, 640,"center")
+  -- love.graphics.printf("Viewport 3", monoFont, 0, (240/2)+480, 640,"center")
   for i = 1,29 do
     if game.os == "R36S" then
       love.graphics.printf("Test 3",monoFont,0, 480+((i-1)*FONT_HEIGHT),640,"left")
@@ -432,7 +471,7 @@ function love.draw()
     end
   end
   love.graphics.rectangle("line",640,480,640,240)
-  love.graphics.printf("Viewport 4", monoFont, 640, (240/2)+480, 640,"center")
+  -- love.graphics.printf("Viewport 4", monoFont, 640, (240/2)+480, 640,"center")
   for i = 1,29 do
     if game.os == "R36S" then
       love.graphics.printf("Test 4",monoFont,640, 480+((i-1)*FONT_HEIGHT),640,"left")
@@ -440,6 +479,9 @@ function love.draw()
       -- render for computers
     end
   end
+
+  -- draw buttons
+  drawButtons()
 
 --  overlayStats.draw() -- Should always be called last
 end
@@ -603,6 +645,14 @@ function love.keypressed(key, scancode, isrepeat)
     end
     if key == "'" and game.canvasy < MAX_CANVAS_Y then
       game.canvasy = game.canvasy + 1
+    end
+
+    -- "\" to toggle solid background color
+    if key == "/" then
+      game.bgcolorSelected = game.bgcolorSelected + 1
+      if game.bgcolorSelected == 17 then
+        game.bgcolorSelected = 0
+      end
     end
 
 
