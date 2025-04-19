@@ -32,20 +32,23 @@ local ansi = require("lib.ansi")
 
 -- user monoFont to display, 176 x 224 px
 local charTable = {
-  [1] = {"█","▓","▒","░","▄","▀","▌","▐","/","|","\\"},
-  [2] = {"○","■","▲","▼","►","◄","~","!","@","#","$"},
-  [3] = {"╔","═","╦","╩","╗","║","╠","╬","╣","╚","╝"},
-  [4] = {"┌","─","┬","┴","┐","│","├","┼","┤","└","┘"},
-  [5] = {"╓","╒","╤","╥","╨","╧","╥","╤","╖","╕","."},
-  [6] = {"╫","╪","╟","╞","╢","╡","╙","╘","╜","╛",","},
-  [7]= {"!","@","#","$","%","^","&","*","(",")"," "},
-  [8] = {"a","b","c","d","e","f","g","h","i","j","k"},
-  [9] = {"l","m","n","o","p","q","r","s","t","u","v"},
+  [1]  = {"█","▓","▒","░","▄","▀","▌","▐","/","|","\\"},
+  [2]  = {"○","■","▲","▼","►","◄","~","!","@","#","$"},
+  [3]  = {"╔","═","╦","╩","╗","║","╠","╬","╣","╚","╝"},
+  [4]  = {"┌","─","┬","┴","┐","│","├","┼","┤","└","┘"},
+  [5]  = {"╓","╒","╤","╥","╨","╧","╥","╤","╖","╕","."},
+  [6]  = {"╫","╪","╟","╞","╢","╡","╙","╘","╜","╛",","},
+  [7]  = {"!","@","#","$","%","^","&","*","(",")"," "},
+  [8]  = {"a","b","c","d","e","f","g","h","i","j","k"},
+  [9]  = {"l","m","n","o","p","q","r","s","t","u","v"},
   [10] = {"w","x","y","z","-","=","_","+","[","]","'"},
-  [11]= {"A","B","C","D","E","F","G","H","I","J","K"},
-  [12]= {"L","M","N","O","P","Q","R","S","T","U","V"},
-  [13]= {"W","X","Y","Z","<",">",",",".",";",":","?"},
-  [14]= {"1","2","3","4","5","6","7","8","9","0","`"},
+  [11] = {"A","B","C","D","E","F","G","H","I","J","K"},
+  [12] = {"L","M","N","O","P","Q","R","S","T","U","V"},
+  [13] = {"W","X","Y","Z","<",">",",",".",";",":","?"},
+  [14] = {"1","2","3","4","5","6","7","8","9","0","`"},
+  [15] = {string.char(1),string.char(2),string.char(3),string.char(4),string.char(5),string.char(6),string.char(7),string.char(8),string.char(9),string.char(11),string.char(12),},
+  [16] = {string.char(14),string.char(15),string.char(16),string.char(17),string.char(18),string.char(19),string.char(20),string.char(21),string.char(22),string.char(23),string.char(24),},
+  [17] = {string.char(25),string.char(26),string.char(27),string.char(28),string.char(29),string.char(30),string.char(31),string.char(32),string.char(33),string.char(34),string.char(35),},
 }
 
 local game = {}
@@ -135,6 +138,12 @@ local selected = {
   viewport = 1,
 }
 
+local success = love.filesystem.remove( "bmp/.DS_Store" ) -- cleanup for MacOS
+if success then
+  print("DS_Store removed from BMP")
+else
+  print("No files removed from BMP")
+end
 local bmpFiles = love.filesystem.getDirectoryItems( "bmp" ) -- table of files in the bmp directory
 
 local colorpalette = {}
@@ -170,7 +179,7 @@ function drawCharTable()
   local x = math.floor((game.width - 176)/2)
   local y = math.floor((game.height - 224)/2)
   love.graphics.setColor(color.darkgrey)
-  for i = 1,14 do
+  for i = 1,17 do
     for j = 1,11 do
       love.graphics.setColor(color.darkgrey)
       love.graphics.setFont(monoFont)
@@ -335,6 +344,7 @@ function love.draw()
   end
 
   -- render the art area
+  love.graphics.setColor(color.white)
   for i = 1,game.canvasy do
     for j = 1,game.canvasx do
       tempText = {
@@ -385,13 +395,19 @@ function love.draw()
 
   -- draw selectBmp (noscroll list) if selected.bmp = ""
   if selected.bmp == "" then
-    drawScrollList(" Select a BMP ", bmpFiles, "UP/DOWN: Select  RETURN: Confirm ", selected.bmpnumber, 0, 23, 60, color.brightblue, color.blue)
+    drawScrollList(" Select a BMP ", bmpFiles, "UP/DOWN: Select  RETURN: Confirm ", selected.bmpnumber, 80, 23, 60, color.brightblue, color.blue)
   end
 
   -- draw mouse pointer as a text triangle
   love.graphics.setFont(monoFont2x)
   love.graphics.setColor(color.white)
   love.graphics.print("▲",love.mouse.getX()-4,love.mouse.getY())
+
+
+  -- draw canvas border
+  love.graphics.setColor(color.brightcyan)
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle("line", 0, 0, game.canvasx*FONT2X_WIDTH, game.canvasy*FONT2X_HEIGHT)
 
   -- draw viewports (debug only)
   love.graphics.setColor(color.brightcyan)
@@ -412,7 +428,7 @@ function love.draw()
     if game.os == "R36S" then
       love.graphics.printf("Test 3",monoFont,0, 480+((i-1)*FONT_HEIGHT),640,"left")
     else
-      love.graphics.printf("Test 3",monoFont2x,0, 480+((i-1)*FONT2X_HEIGHT),640,"left")
+      -- render for computers
     end
   end
   love.graphics.rectangle("line",640,480,640,240)
@@ -421,7 +437,7 @@ function love.draw()
     if game.os == "R36S" then
       love.graphics.printf("Test 4",monoFont,640, 480+((i-1)*FONT_HEIGHT),640,"left")
     else
-      love.graphics.printf("Test 4",monoFont2x,640, 480+((i-1)*FONT2X_HEIGHT),640,"left")
+      -- render for computers
     end
   end
 
@@ -568,6 +584,9 @@ function love.keypressed(key, scancode, isrepeat)
         selected.bmpnumber = selected.bmpnumber + 1
         bitmap = love.graphics.newImage( "bmp/"..bmpFiles[selected.bmpnumber])
       end
+      if key == "return" then
+        selected.bmp = "bmp/"..bmpFiles[selected.bmpnumber]
+      end
     end
 
     -- "[" / "]" to increase / decrease canvas size (x)
@@ -612,7 +631,7 @@ function love.keypressed(key, scancode, isrepeat)
         game.chary = game.chary - 1
         selected.char = charTable[game.chary][game.charx]
       end
-      if key == "s" and game.chary < 14 then
+      if key == "s" and game.chary < 17 then
         game.chary = game.chary + 1
         selected.char = charTable[game.chary][game.charx]
       end
@@ -751,7 +770,6 @@ function love.touchpressed(id, x, y, dx, dy, pressure)
 end
 
 --[[ To-Dos
-  * support multiple art dimensions
   * export to PNG
   * auto-convert JPG PNG to XTUI
 ]]

@@ -13,6 +13,11 @@
 
 local json = require("lib.json")
 
+--[[ ASCII chars that can be used with string.char(i) range from 1,127 except the listed:
+https://en.wikipedia.org/wiki/Code_page_437
+10(Line feed), 13(Carriage return), 32(space)
+]]
+
 -- text samples LÖVE
 TEXT_WIDTH = "0---------1---------2---------3---------4---------5---------6---------7---------8---------9---------0---------1---------2---------3---------4---------5---------"
 TEXT_HEIGHT = "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9"
