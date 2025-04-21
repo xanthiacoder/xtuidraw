@@ -178,11 +178,24 @@ end
 
 function drawCharTable()
   local x = math.floor((game.width - 176)/2)
-  local y = math.floor((game.height - 224)/2)
-  love.graphics.setColor(color.darkgrey)
+  --  local y = math.floor((game.height - 224)/2)
+  local y = 10*FONT2X_HEIGHT
+
+  -- draw background color
+  if game.bgcolorSelected >= 0 and game.bgcolorSelected <= 15 then
+    love.graphics.setColor(color[game.bgcolorSelected])
+  else
+    love.graphics.setColor(color.black)
+  end
+
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle("fill",x,y-(5*FONT_HEIGHT),11*(FONT2X_WIDTH*2),22*(FONT_HEIGHT))
+
+  love.graphics.setColor(selected.color)
+  love.graphics.setFont(monoFont)
   for i = 1,17 do
     for j = 1,11 do
-      love.graphics.setColor(color.darkgrey)
+      love.graphics.setColor(selected.color)
       love.graphics.setFont(monoFont)
       love.graphics.print(charTable[i][j], x + (((j-1)*2)*FONT_WIDTH), y + ((i-1)*FONT_HEIGHT) )
     end
@@ -204,13 +217,23 @@ function saveData( filename , directory )
 
   -- initialize max ansiFlat (1D array) for compatibility
   local ansiFlat = {}
-  for i = 1,(game.canvasy*game.canvasx)*2 do
+    for i = 1,(game.canvasy*game.canvasx)*2 do
     ansiFlat[i] = ""
   end
 
+  -- user temp table so as not to mess up ansiArt table
+  local ansiArtTemp = {}
+  for i = 1,game.canvasy do
+    ansiArtTemp[i] = {}
+  end
+  for i = 1,game.canvasy do
+    for j = 1,game.canvasx*2 do
+      ansiArtTemp[i][j] = ansiArt[i][j]
+    end
+  end
   -- place \n at end of each row
   for i = 1,game.canvasy do
-    ansiArt[i][game.canvasx*2] = ansiArt[i][game.canvasx*2] .. "\n"
+      ansiArtTemp[i][game.canvasx*2] = ansiArtTemp[i][game.canvasx*2] .. "\n"
   end
 
   -- create 1D from 2D array for compatibility
@@ -222,24 +245,24 @@ function saveData( filename , directory )
       fractional = game.canvasx*2
       intergal = intergal - 1
     end
-    print(intergal ..","..fractional)
-    ansiFlat[i] = ansiArt[intergal][fractional]
+--    print(intergal ..","..fractional)
+    ansiFlat[i] = ansiArtTemp[intergal][fractional]
   end
 
   -- save regular 2D table
   if game.os ~= "R36S" then
-    -- save ansiart
-    local success, message =love.filesystem.write(directory.."/"..filename, json.encode(ansiArt))
-    if success then
-	    print ('file created: '..directory.."/"..filename)
-    else
-	    print ('file not created: '..message)
-    end
+    -- save ansiart (old version dump)
+--    local success, message =love.filesystem.write(directory.."/"..filename, json.encode(ansiArt))
+--    if success then
+--	    print ('file created: '..directory.."/"..filename)
+--    else
+--	    print ('file not created: '..message)
+--    end
 
-  -- save ansiflat
-    local success, message =love.filesystem.write(directory.."/"..filename.."flat", json.encode(ansiFlat))
+  -- save ansiart (flat version)
+    local success, message =love.filesystem.write(directory.."/"..game.bgcolorSelected.."-"..filename, json.encode(ansiFlat))
     if success then
-	    print ('file created: '..directory.."/"..filename.."flat")
+	    print ('file created: '..directory.."/"..game.bgcolorSelected.."-"..filename)
     else
 	    print ('file not created: '..message)
     end
@@ -284,6 +307,9 @@ function love.load()
     [9]  = json.decode(love.filesystem.read("xtui/button-09.xtui")),
     [10] = json.decode(love.filesystem.read("xtui/button-10.xtui")),
   }
+
+  -- pointers
+  pointer = love.graphics.newImage("img/pointer-wand.png")
 
   local tempData = love.filesystem.read("xtui/colorpalette_16.xtui")
   colorpalette = json.decode(tempData)
@@ -369,12 +395,23 @@ function love.draw()
       love.graphics.translate( -640, -480 )
     end
 
+  -- draw tooltip
+  local tooltip = "C - clear canvas\n"
+  tooltip = tooltip .. "[ ] - change canvas width "..game.canvasx.."\n"
+  tooltip = tooltip .. "; ' - change canvas height "..game.canvasy.."\n"
+  tooltip = tooltip .. "/ - change background color "..game.bgcolorSelected.."\n"
+  tooltip = tooltip .. "right-shift + WASD - select char\n"
+  tooltip = tooltip .. "F8 - quicksave\n"
+  tooltip = tooltip .. "ESC - quit\n"
+  love.graphics.setFont(monoFont)
+  love.graphics.setColor(color.white)
+  love.graphics.printf(tooltip, 640, 1*FONT_HEIGHT, 320, "left")
+
   -- draw base checkerboard based on canvas size
   drawCheckerboard( game.canvasx, game.canvasy, FONT2X_WIDTH, FONT2X_HEIGHT)
 
   -- draw solid color background on canvas size
   drawBackground(game.bgcolorSelected)
-
 
   -- draw the bitmap image to be traced
   if bitmap ~= nil then
@@ -423,24 +460,16 @@ function love.draw()
   if love.keyboard.isDown("rshift") and game.os ~= "R36S" then
     drawCharTable()
   end
-  if love.keyboard.isDown("lshift") and game.os == "R36S" then
-    drawCharTable()
-  end
 
   -- draw cursor
   love.graphics.setColor( color.pulsingwhite )
   love.graphics.setLineWidth(1)
   love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
 
-  -- draw selectBmp (noscroll list) if selected.bmp = ""
-  if selected.bmp == "" then
-    drawScrollList(" Select a BMP ", bmpFiles, "UP/DOWN: Select  RETURN: Confirm ", selected.bmpnumber, 80, 23, 60, color.brightblue, color.blue)
-  end
 
-  -- draw mouse pointer as a text triangle
-  love.graphics.setFont(monoFont2x)
+  -- draw mouse pointer as graphic wand
   love.graphics.setColor(color.white)
-  love.graphics.print("▲",love.mouse.getX()-4,love.mouse.getY())
+  love.graphics.draw(pointer, love.mouse.getX(), love.mouse.getY())
 
 
   -- draw canvas border
@@ -451,17 +480,17 @@ function love.draw()
   -- draw viewports (debug only)
   love.graphics.setColor(color.brightcyan)
   love.graphics.setLineWidth(1)
-  love.graphics.rectangle("line",0,0,640,480)
-  love.graphics.printf("Viewport 1", monoFont, 0, 480/2, 640,"center")
-  love.graphics.rectangle("line",640,0,640,480)
-  love.graphics.printf("Viewport 2", monoFont, 640, 480/2, 640,"center")
+--  love.graphics.rectangle("line",0,0,640,480)
+--  love.graphics.printf("Viewport 1", monoFont, 0, 480/2, 640,"center")
+--  love.graphics.rectangle("line",640,0,640,480)
+--  love.graphics.printf("Viewport 2", monoFont, 640, 480/2, 640,"center")
   -- viewport 3 and 4 use different fonts
   if game.os == "R36S" then
     love.graphics.setFont(monoFont)
   else
     love.graphics.setFont(monoFont2x)
   end
-  love.graphics.rectangle("line",0,480,640,240)
+--  love.graphics.rectangle("line",0,480,640,240)
   -- love.graphics.printf("Viewport 3", monoFont, 0, (240/2)+480, 640,"center")
   for i = 1,29 do
     if game.os == "R36S" then
@@ -470,7 +499,7 @@ function love.draw()
       -- render for computers
     end
   end
-  love.graphics.rectangle("line",640,480,640,240)
+--  love.graphics.rectangle("line",640,480,640,240)
   -- love.graphics.printf("Viewport 4", monoFont, 640, (240/2)+480, 640,"center")
   for i = 1,29 do
     if game.os == "R36S" then
@@ -554,7 +583,7 @@ function love.keypressed(key, scancode, isrepeat)
     -- (B) button to clear char
     if key == "lshift" then
       ansiArt[game.cursory][(game.cursorx*2)-1] = color.darkgrey
-      ansiArt[game.cursory][game.cursorx*2] = "."
+      ansiArt[game.cursory][game.cursorx*2] = " "
     end
     -- (X) button to eyedrop char
     if key == "space" then
@@ -569,7 +598,7 @@ function love.keypressed(key, scancode, isrepeat)
       game.chary = game.chary - 1
       selected.char = charTable[game.chary][game.charx]
     end
-    if key == "down" and game.chary < 14 then
+    if key == "down" and game.chary < 17 then
       game.chary = game.chary + 1
       selected.char = charTable[game.chary][game.charx]
     end
@@ -600,6 +629,12 @@ function love.keypressed(key, scancode, isrepeat)
       end
     end
 
+    -- Start (return) to quicksave
+    if key == "return" then
+      local files = love.filesystem.getDirectoryItems( "quicksave" )
+      saveData("quicksave_"..(#files)..".xtui","quicksave") -- running numbers for quicksaves
+    end
+
   else
     -- input for everything else (computers)
     -- arrow keys for moving cursor when BMP already selected
@@ -625,9 +660,6 @@ function love.keypressed(key, scancode, isrepeat)
       if key == "down" and selected.bmpnumber < #bmpFiles then
         selected.bmpnumber = selected.bmpnumber + 1
         bitmap = love.graphics.newImage( "bmp/"..bmpFiles[selected.bmpnumber])
-      end
-      if key == "return" then
-        selected.bmp = "bmp/"..bmpFiles[selected.bmpnumber]
       end
     end
 
@@ -696,22 +728,25 @@ function love.keypressed(key, scancode, isrepeat)
       end
     end
 
-        -- L1 (l) to toggle colors (for testing)
-        if key == "l" then
-          if game.colorSelected == 15 then
-            game.colorSelected = 0
-          else
-            game.colorSelected = game.colorSelected + 1
-          end
-          selected.color = color[game.colorSelected]
-        end
+    -- L1 (l) to toggle colors (for testing)
+    if key == "l" then
+      if game.colorSelected == 15 then
+        game.colorSelected = 0
+      else
+        game.colorSelected = game.colorSelected + 1
+      end
+      selected.color = color[game.colorSelected]
+    end
 
   end
 
-  if key == "f2" then
-    -- load ansiart
-    local tempData = love.filesystem.read("ansiart.xtui")
-    ansiArt = json.decode(tempData)
+  -- clear canvas
+  if key == "c" then
+    for i = 1,game.canvasy do
+      for j = 1,game.canvasx do
+        ansiArt[i][j*2] = " "
+      end
+    end
   end
 
   if key == "f3" then
