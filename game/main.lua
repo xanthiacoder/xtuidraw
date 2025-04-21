@@ -55,9 +55,11 @@ local game = {}
 
 -- set game timers
 game.timeThisSession = 0
+game.autosaveCooldown = 0
 
 -- set game message
 game.message = ""
+game.messageViewport = 1
 
 -- detect viewport
 game.width, game.height = love.graphics.getDimensions( )
@@ -140,6 +142,7 @@ local selected = {
   bmp   = "",
   bmpnumber = 1,
   viewport = 1,
+  textmode = 2, -- 1 = 8x16, 2 = 8x8
 }
 
 local success = love.filesystem.remove( "bmp/.DS_Store" ) -- cleanup for MacOS
@@ -293,11 +296,11 @@ function love.load()
   monoFont2x = love.graphics.newFont("fonts/"..FONT2X, FONT2X_SIZE)
   monoFont2x4s = love.graphics.newFont("fonts/"..FONT2X, FONT2X_SIZE*4)
   love.graphics.setFont( monoFont )
-  print(monoFont:getWidth("█"))
-  print(monoFont:getHeight())
+  -- print(monoFont:getWidth("█"))
+  -- print(monoFont:getHeight())
   love.graphics.setFont( monoFont2x )
-  print(monoFont2x:getWidth("█"))
-  print(monoFont2x:getHeight())
+  -- print(monoFont2x:getWidth("█"))
+  -- print(monoFont2x:getHeight())
 
   -- buttons
   button = {
@@ -332,7 +335,9 @@ function drawXTUI16(xtui, x, y)
   end
 end
 
-
+---comment
+---@param msg string Text message to display
+---@param viewport integer 1..4 to switch location of display output
 function drawMessage( msg, viewport)
   local rows = math.ceil(#msg/60)
   love.graphics.setColor(color.grey)
@@ -342,48 +347,6 @@ function drawMessage( msg, viewport)
   love.graphics.printf(msg, monoFont, 10*FONT_WIDTH, (14-(math.floor(rows/2)))*FONT_HEIGHT, 60*FONT_WIDTH, "left")
 end
 
--- draw checkerboard base of canvas
----@param x integer number of columns
----@param y integer number of rows
----@param width integer width of font
----@param height integer height of font
-function drawCheckerboard( x , y , width, height)
-
-  local drawBright = true -- draw a bright box
-
-  for i = 1,y do -- iterate over rows
-    if (i%2) == 0 then -- odd numbered row detected
-      drawBright = true
-    else
-      drawBright = false
-    end
-    for j = 1,x do -- iterate over columns
-      if drawBright then
-        -- draw bright box
-        love.graphics.setColor(color.white)
-        love.graphics.rectangle("fill", 0+(j-1)*width, 0+(i-1)*height, width, height)
-        drawBright = false
-      else
-        -- draw dark box
-        love.graphics.setColor(color.darkgrey)
-        love.graphics.rectangle("fill", 0+(j-1)*width, 0+(i-1)*height, width, height)
-        drawBright = true
-      end
-    end
-  end
-end
-
----draw solid color background
----@param color integer 0..15 are regular colors, 16 is transparent
-function drawBackground(bgcolor)
-  if bgcolor == 16 then
-    love.graphics.setColor(0,0,0,0) -- transparent
-  else
-    love.graphics.setColor(color[bgcolor])
-  end
-  love.graphics.setLineWidth(1)
-  love.graphics.rectangle( "fill", 0, 0, (game.canvasx)*FONT2X_WIDTH, (game.canvasy)*FONT2X_HEIGHT)
-end
 
 function drawButtons()
   love.graphics.setColor(color.white)
@@ -400,6 +363,81 @@ function clearCanvas()
   end
 end
 
+---comment
+---@param textmode integer 1..2 (1 = 8x16, 2 = 8x8)
+---@param bgcolor integer 0..16 (0 black .. 16 transparent)
+function drawArtCanvas(textmode, bgcolor)
+
+  -- draw checkerboard
+  local drawBright = true -- draw a bright box
+  for i = 1,game.canvasy do -- iterate over rows
+    if (i%2) == 0 then -- odd numbered row detected
+      drawBright = true
+    else
+      drawBright = false
+    end
+    for j = 1,game.canvasx do -- iterate over columns
+      if drawBright then
+        -- draw bright box
+        love.graphics.setColor(color.white)
+        if textmode == 2 then
+          love.graphics.rectangle("fill", 0+(j-1)*FONT2X_WIDTH, 0+(i-1)*FONT2X_HEIGHT, FONT2X_WIDTH, FONT2X_HEIGHT)
+        else
+          love.graphics.rectangle("fill", 0+(j-1)*FONT_WIDTH, 0+(i-1)*FONT_HEIGHT, FONT_WIDTH, FONT_HEIGHT)
+        end
+        drawBright = false
+      else
+        -- draw dark box
+        love.graphics.setColor(color.darkgrey)
+        if textmode == 2 then
+          love.graphics.rectangle("fill", 0+(j-1)*FONT2X_WIDTH, 0+(i-1)*FONT2X_HEIGHT, FONT2X_WIDTH, FONT2X_HEIGHT)
+        else
+          love.graphics.rectangle("fill", 0+(j-1)*FONT_WIDTH, 0+(i-1)*FONT_HEIGHT, FONT_WIDTH, FONT_HEIGHT)
+        end
+        drawBright = true
+      end
+    end
+  end
+
+  -- draw background solid color
+  if bgcolor == 16 then
+    love.graphics.setColor(0,0,0,0) -- transparent
+  else
+    love.graphics.setColor(color[bgcolor])
+  end
+  love.graphics.setLineWidth(1)
+  if textmode == 2 then
+    love.graphics.rectangle( "fill", 0, 0, (game.canvasx)*FONT2X_WIDTH, (game.canvasy)*FONT2X_HEIGHT)
+  else
+    love.graphics.rectangle( "fill", 0, 0, (game.canvasx)*FONT_WIDTH, (game.canvasy)*FONT_HEIGHT)
+  end
+
+  -- draw ansiArt
+  love.graphics.setColor(color.white)
+  for i = 1,game.canvasy do
+    for j = 1,game.canvasx do
+      tempText = {
+        ansiArt[i][j+(j-1)],
+        ansiArt[i][j*2],
+      }
+      if textmode == 2 then
+        love.graphics.print(tempText, monoFont2x, (j-1)*FONT2X_WIDTH, (i-1)*FONT2X_HEIGHT)
+      else
+        love.graphics.print(tempText, monoFont, (j-1)*FONT_WIDTH, (i-1)*FONT_HEIGHT)
+      end
+    end
+  end
+
+  -- draw canvas border
+  love.graphics.setColor(color.brightcyan)
+  love.graphics.setLineWidth(1)
+  if textmode == 2 then
+    love.graphics.rectangle("line", 0, 0, game.canvasx*FONT2X_WIDTH, game.canvasy*FONT2X_HEIGHT)
+  else
+    love.graphics.rectangle("line", 0, 0, game.canvasx*FONT_WIDTH, game.canvasy*FONT_HEIGHT)
+  end
+
+end
 
 function love.draw()
   -- Your game draw here (from bottom to top layer)
@@ -420,6 +458,7 @@ function love.draw()
 
   -- draw tooltip
   local tooltip = "C - clear canvas\n"
+  tooltip = tooltip .. "= - toggle textmode "..selected.textmode.."\n"
   tooltip = tooltip .. "[ ] - change canvas width "..game.canvasx.."\n"
   tooltip = tooltip .. "; ' - change canvas height "..game.canvasy.."\n"
   tooltip = tooltip .. "/ - change background color "..game.bgcolorSelected.."\n"
@@ -430,11 +469,6 @@ function love.draw()
   love.graphics.setColor(color.white)
   love.graphics.printf(tooltip, 640, 1*FONT_HEIGHT, 320, "left")
 
-  -- draw base checkerboard based on canvas size
-  drawCheckerboard( game.canvasx, game.canvasy, FONT2X_WIDTH, FONT2X_HEIGHT)
-
-  -- draw solid color background on canvas size
-  drawBackground(game.bgcolorSelected)
 
   -- draw the bitmap image to be traced
   if bitmap ~= nil then
@@ -442,17 +476,8 @@ function love.draw()
     love.graphics.draw( bitmap, 0, 0, 0, 8, 8 ) -- rotation=0, scalex=8, scaley=8
   end
 
-  -- render the art area
-  love.graphics.setColor(color.white)
-  for i = 1,game.canvasy do
-    for j = 1,game.canvasx do
-      tempText = {
-        ansiArt[i][j+(j-1)],
-        ansiArt[i][j*2],
-      }
-      love.graphics.print(tempText, monoFont2x, (j-1)*FONT2X_WIDTH, (i-1)*FONT2X_HEIGHT)
-    end
-  end
+  -- render the ansiArt area
+  drawArtCanvas(selected.textmode, game.bgcolorSelected)
 
   drawPalette(141, 4)
 
@@ -495,11 +520,6 @@ function love.draw()
   love.graphics.draw(pointer, love.mouse.getX(), love.mouse.getY())
 
 
-  -- draw canvas border
-  love.graphics.setColor(color.brightcyan)
-  love.graphics.setLineWidth(1)
-  love.graphics.rectangle("line", 0, 0, game.canvasx*FONT2X_WIDTH, game.canvasy*FONT2X_HEIGHT)
-
   -- draw viewports (debug only)
   love.graphics.setColor(color.brightcyan)
   love.graphics.setLineWidth(1)
@@ -537,7 +557,7 @@ function love.draw()
 
   -- draw text message
   if game.message ~= "" then
-    drawMessage( game.message, 1 )
+    drawMessage( game.message, game.messageViewport )
   end
 
 --  overlayStats.draw() -- Should always be called last
@@ -547,15 +567,26 @@ function love.update(dt)
   -- Your game update here
 
   -- mouse button detections
-  if love.mouse.isDown(1) then
+  if love.mouse.isDown(1) and selected.textmode == 2 then
     if (game.mousex >= 1 and game.mousex <= game.canvasx) and (game.mousey >= 1 and game.mousey <= game.canvasy) then
       ansiArt[game.mousey][(game.mousex*2)-1] = selected.color
       ansiArt[game.mousey][game.mousex*2] = selected.char
     end
   end
+  if love.mouse.isDown(1) and selected.textmode == 1 then
+    if (game.mousex >= 1 and game.mousex <= game.canvasx) and (game.mousey >= 1 and game.mousey <= game.canvasy*2) then
+      ansiArt[math.ceil(game.mousey/2)][(game.mousex*2)-1] = selected.color
+      ansiArt[math.ceil(game.mousey/2)][game.mousex*2] = selected.char
+    end
+  end
 
   -- game timers
   game.timeThisSession = game.timeThisSession + dt
+  game.autosaveCooldown = game.autosaveCooldown - dt
+  if game.autosaveCooldown < 0 then
+    game.autosaveCooldown = 0
+  end
+
   if math.floor(game.timeThisSession)%2 == 1 then
     -- odd seconds
     color.pulsingwhite = {1,1,1,(game.timeThisSession%1)} -- using modulo for fading alpha channel
@@ -566,6 +597,14 @@ function love.update(dt)
   -- set coords
   game.mousex = math.floor(love.mouse.getX()/8)+1 -- coords in font2x starting at 1x1
   game.mousey = math.floor(love.mouse.getY()/8)+1 -- coords in font2x starting at 1x1
+
+  -- autosave every minute
+  if math.ceil(game.timeThisSession)%60 == 0 and game.autosaveCooldown == 0 then
+    -- every 60 seconds
+    game.autosaveCooldown = 3 -- 3 seconds cooldown
+    local files = love.filesystem.getDirectoryItems( "autosave" )
+    saveData("autosave_"..(#files)..".xtui","autosave") -- running numbers for quicksaves
+  end
 
   -- set statusbar
   game.statusbar = game.cursorx..","..game.cursory.." ("..game.mousex..","..game.mousey..") Time:"..math.floor(game.timeThisSession)
@@ -771,6 +810,15 @@ function love.keypressed(key, scancode, isrepeat)
   -- clear canvas
   if key == "c" then
     clearCanvas()
+  end
+
+  -- toggle textmode
+  if key == "=" then
+    if selected.textmode == 2 then
+      selected.textmode = 1
+    else
+      selected.textmode = 2
+    end
   end
 
   -- enter to clear screen messages
