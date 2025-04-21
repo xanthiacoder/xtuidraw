@@ -56,6 +56,9 @@ local game = {}
 -- set game timers
 game.timeThisSession = 0
 
+-- set game message
+game.message = ""
+
 -- detect viewport
 game.width, game.height = love.graphics.getDimensions( )
 print("viewport: "..game.width.."x"..game.height)
@@ -262,8 +265,10 @@ function saveData( filename , directory )
   -- save ansiart (flat version)
     local success, message =love.filesystem.write(directory.."/"..game.bgcolorSelected.."-"..filename, json.encode(ansiFlat))
     if success then
+      game.message = 'file created: '..directory.."/"..game.bgcolorSelected.."-"..filename
 	    print ('file created: '..directory.."/"..game.bgcolorSelected.."-"..filename)
     else
+      game.message = 'file not created: '..message
 	    print ('file not created: '..message)
     end
   else
@@ -327,6 +332,16 @@ function drawXTUI16(xtui, x, y)
   end
 end
 
+
+function drawMessage( msg, viewport)
+  local rows = math.ceil(#msg/60)
+  love.graphics.setColor(color.grey)
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle("fill", 8*FONT_WIDTH, (13-(math.floor(rows/2)))*FONT_HEIGHT, 62*FONT_WIDTH, (rows+2)*FONT_HEIGHT )
+  love.graphics.setColor(color.black)
+  love.graphics.printf(msg, monoFont, 10*FONT_WIDTH, (14-(math.floor(rows/2)))*FONT_HEIGHT, 60*FONT_WIDTH, "left")
+end
+
 -- draw checkerboard base of canvas
 ---@param x integer number of columns
 ---@param y integer number of rows
@@ -374,6 +389,14 @@ function drawButtons()
   love.graphics.setColor(color.white)
   for i = 1,10 do
     love.graphics.print(button[i],0+((i-1)*128),480)
+  end
+end
+
+function clearCanvas()
+  for i = 1,game.canvasy do
+    for j = 1,game.canvasx do
+      ansiArt[i][j*2] = " "
+    end
   end
 end
 
@@ -511,6 +534,11 @@ function love.draw()
 
   -- draw buttons
   drawButtons()
+
+  -- draw text message
+  if game.message ~= "" then
+    drawMessage( game.message, 1 )
+  end
 
 --  overlayStats.draw() -- Should always be called last
 end
@@ -742,11 +770,12 @@ function love.keypressed(key, scancode, isrepeat)
 
   -- clear canvas
   if key == "c" then
-    for i = 1,game.canvasy do
-      for j = 1,game.canvasx do
-        ansiArt[i][j*2] = " "
-      end
-    end
+    clearCanvas()
+  end
+
+  -- enter to clear screen messages
+  if key == "return" and game.message ~= "" then
+    game.message = ""
   end
 
   if key == "f3" then
