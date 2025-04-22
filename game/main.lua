@@ -51,6 +51,35 @@ local charTable = {
   [17] = {string.char(25),string.char(26),string.char(27),string.char(28),string.char(29),string.char(30),string.char(31),string.char(32),string.char(33),string.char(34),string.char(35),},
 }
 
+-- cursor text to display when hovering over a fixed 8x8 coordinate
+-- fullscreen 160 x 90
+-- initialize table
+local hover = {}
+for i = 1,90 do
+  hover[i] = {}
+  for j = 1,160 do
+    hover[i][j] = ""
+  end
+end
+-- enter test data
+hover[8][8] = "Hero"
+hover[9][8] = "Hero"
+hover[8][12] = "Monster"
+hover[9][12] = "Monster"
+
+local click = {}
+for i = 1,90 do
+  click[i] = {}
+  for j = 1,160 do
+    click[i][j] = ""
+  end
+end
+-- enter test data
+click[8][8] = "Is that some brocolli stuck between your teeth? Ewww..."
+click[9][8] = "Is that some brocolli stuck between your teeth? Ewww..."
+click[8][12] = "This monster looks better than you in red. You need a fashion reset as soon as possible, preferrably without yourself as the consultant."
+click[9][12] = "This monster looks better than you in red. You need a fashion reset as soon as possible, preferrably without yourself as the consultant."
+
 local game = {}
 
 -- set game timers
@@ -340,6 +369,25 @@ end
 ---@param viewport integer 1..4 to switch location of display output
 function drawMessage( msg, viewport)
   local rows = math.ceil(#msg/60)
+  -- draw frame
+  love.graphics.setColor(color.white)
+  love.graphics.setFont(monoFont2x)
+  for i = 1,62 do
+    love.graphics.print("▄", (8+(i-1))*FONT_WIDTH, (FONT_HEIGHT/2)+((12)-(math.floor(rows/2)))*FONT_HEIGHT)
+  end
+  love.graphics.setFont(monoFont)
+  for i = 1,rows+2 do
+    love.graphics.print("▐", 7*FONT_WIDTH, ((12+i)-(math.floor(rows/2)))*FONT_HEIGHT )
+  end
+  love.graphics.setColor(color.darkgrey)
+  for i = 1,62 do
+      love.graphics.print("▀", (8+(i-1))*FONT_WIDTH, ((15+rows)-(math.floor(rows/2)))*FONT_HEIGHT)
+  end
+  love.graphics.setFont(monoFont)
+  for i = 1,rows+2 do
+    love.graphics.print("▌", (7+63)*FONT_WIDTH, ((12+i)-(math.floor(rows/2)))*FONT_HEIGHT )
+  end
+
   love.graphics.setColor(color.grey)
   love.graphics.setLineWidth(1)
   love.graphics.rectangle("fill", 8*FONT_WIDTH, (13-(math.floor(rows/2)))*FONT_HEIGHT, 62*FONT_WIDTH, (rows+2)*FONT_HEIGHT )
@@ -515,9 +563,15 @@ function love.draw()
   love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
 
 
-  -- draw mouse pointer as graphic wand
+  -- draw mouse pointer as graphic wand, hover tip
+  -- draw hover shadow first
+  love.graphics.setFont(monoFont)
+  love.graphics.setColor(color.black)
+  love.graphics.print(hover[game.mousey][game.mousex],(game.mousex*FONT2X_WIDTH)+2,((game.mousey+2)*FONT2X_HEIGHT)+2)
+  -- draw pointer wand and hover text
   love.graphics.setColor(color.white)
   love.graphics.draw(pointer, love.mouse.getX(), love.mouse.getY())
+  love.graphics.print(hover[game.mousey][game.mousex],game.mousex*FONT2X_WIDTH,(game.mousey+2)*FONT2X_HEIGHT)
 
 
   -- draw viewports (debug only)
@@ -850,6 +904,9 @@ function love.mousepressed( x, y, button, istouch, presses )
     x = math.floor(love.mouse.getX()/8)-79,
     y = math.floor(love.mouse.getY()/8)-4
   }
+
+  -- set game message based on click heatmap
+  game.message = click[game.mousey][game.mousex]
 
   if mouse.y >= 1 and mouse.y <= 8 then -- first bright palette row
     if mouse.x == 63 or mouse.x == 64 then -- black
