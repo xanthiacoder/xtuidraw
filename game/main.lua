@@ -30,10 +30,10 @@ local ansi = require("lib.ansi")
 -- TEXT_SYMBOLS = "○ ■ ▲ ▼ ► ◄" -- cp437
 -- TEXT_BOX = "╦ ╗ ╔ ═ ╩ ╝ ╚ ║ ╬ ╣ ╠ ╥ ╖ ╓ ╤ ╕ ╒ ┬ ┐ ┌ ─ ┴ ┘ └ │ ┼ ┤ ├ ╨ ╜ ╙ ╧ ╛ ╘ ╫ ╢ ╟ ╪ ╡ ╞" -- cp437
 
--- user monoFont to display, 176 x 224 px
+-- user monoFont to display, 11 columns x 17 rows = 187 chars
 local charTable = {
   [1]  = {"█","▓","▒","░","▄","▀","▌","▐","/","|","\\"},
-  [2]  = {"○","■","▲","▼","►","◄","~","!","@","#","$"},
+  [2]  = {"≈","■","¥","ε","δ","Φ","Ω","∩","♪","∞","≡"},
   [3]  = {"╔","═","╦","╩","╗","║","╠","╬","╣","╚","╝"},
   [4]  = {"┌","─","┬","┴","┐","│","├","┼","┤","└","┘"},
   [5]  = {"╓","╒","╤","╥","╨","╧","╥","╤","╖","╕","."},
@@ -46,7 +46,7 @@ local charTable = {
   [12] = {"L","M","N","O","P","Q","R","S","T","U","V"},
   [13] = {"W","X","Y","Z","<",">",",",".",";",":","?"},
   [14] = {"1","2","3","4","5","6","7","8","9","0","`"},
-  [15] = {string.char(1),string.char(2),string.char(3),string.char(4),string.char(5),string.char(6),string.char(7),string.char(8),string.char(9),string.char(11),string.char(12),},
+  [15] = {"☺","☻","♥","♦","♣","♠","•","◘","○","◙","♀",},
   [16] = {string.char(14),string.char(15),string.char(16),string.char(17),string.char(18),string.char(19),string.char(20),string.char(21),string.char(22),string.char(23),string.char(24),},
   [17] = {string.char(25),string.char(26),string.char(27),string.char(28),string.char(29),string.char(30),string.char(31),string.char(32),string.char(33),string.char(34),string.char(35),},
 }
