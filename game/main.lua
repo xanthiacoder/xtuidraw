@@ -213,10 +213,10 @@ function drawPalette( x, y )
 
 end
 
-function drawCharTable()
-  local x = math.floor((game.width - 176)/2)
-  --  local y = math.floor((game.height - 224)/2)
-  local y = 10*FONT2X_HEIGHT
+---comment
+---@param x integer column coordinate in exact pixel
+---@param y integer row coordinate in exact pixel
+function drawCharTable( x, y)
 
   -- draw background color
   if game.bgcolorSelected >= 0 and game.bgcolorSelected <= 15 then
@@ -224,9 +224,6 @@ function drawCharTable()
   else
     love.graphics.setColor(color.black)
   end
-
-  love.graphics.setLineWidth(1)
-  love.graphics.rectangle("fill",x,y-(5*FONT_HEIGHT),11*(FONT2X_WIDTH*2),22*(FONT_HEIGHT))
 
   love.graphics.setColor(selected.color)
   love.graphics.setFont(monoFont)
@@ -236,9 +233,6 @@ function drawCharTable()
       love.graphics.setFont(monoFont)
       love.graphics.print(charTable[i][j], x + (((j-1)*2)*FONT_WIDTH), y + ((i-1)*FONT_HEIGHT) )
     end
-  love.graphics.setColor(selected.color)
-  love.graphics.setFont(monoFont4s)
-  love.graphics.print(selected.char, game.width/2 - 18 , y - FONT_HEIGHT*5 )
   end
 
   -- highlight current selection
@@ -323,6 +317,7 @@ function love.load()
 
   -- fonts
   monoFont = love.graphics.newFont("fonts/"..FONT, FONT_SIZE)
+  monoFont2s = love.graphics.newFont("fonts/"..FONT, FONT_SIZE*2)
   monoFont4s = love.graphics.newFont("fonts/"..FONT, FONT_SIZE*4)
   monoFont2x = love.graphics.newFont("fonts/"..FONT2X, FONT2X_SIZE)
   monoFont2x4s = love.graphics.newFont("fonts/"..FONT2X, FONT2X_SIZE*4)
@@ -625,6 +620,23 @@ function drawCloseup()
   end
 end
 
+
+---@param x integer column using monoFont width FONT_WIDTH
+---@param y integer row using monoFont height FONT_HEIGHT
+function drawBrushes( x, y )
+
+  love.graphics.setFont(monoFont2s)
+  love.graphics.setColor(selected.color)
+  love.graphics.print(selected.char,(x+2)*FONT_WIDTH,(y+1)*FONT_HEIGHT)
+  love.graphics.setFont(monoFont)
+  love.graphics.setColor(color.white)
+  love.graphics.print("Brush", (x+5)*FONT_WIDTH ,(y+2)*FONT_HEIGHT)
+
+  drawCharTable( 82*FONT_WIDTH, 4*FONT_HEIGHT )
+
+end
+
+
 function love.draw()
   -- Your game draw here (from bottom to top layer)
 
@@ -653,7 +665,7 @@ function love.draw()
   tooltip = tooltip .. "ESC - quit\n"
   love.graphics.setFont(monoFont)
   love.graphics.setColor(color.white)
-  love.graphics.printf(tooltip, 640, 1*FONT_HEIGHT, 320, "left")
+  love.graphics.printf(tooltip, 640+(40*FONT_WIDTH), (29-8)*FONT_HEIGHT, 320, "left")
 
 
   -- draw the bitmap image to be traced
@@ -690,10 +702,8 @@ function love.draw()
     love.graphics.printf(selected.char, monoFont, FONT_WIDTH, 0, 16, "left")
   end
 
-  -- draw charTable if reveal key is held
-  if love.keyboard.isDown("rshift") and game.os ~= "R36S" then
-    drawCharTable()
-  end
+  -- draw brushes
+  drawBrushes( 80, 0)
 
   -- draw cursor
   love.graphics.setColor( color.pulsingwhite )
