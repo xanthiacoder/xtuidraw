@@ -505,6 +505,8 @@ function drawCloseup()
     if game.mousey < 30 then
       -- cursor is on higher side of viewport
       if selected.textmode == 2 then
+        love.graphics.setColor(color[game.bgcolorSelected])
+        love.graphics.rectangle("fill",639-(5*(FONT2X_WIDTH*4)), 479-(5*(FONT2X_HEIGHT*4)), 5*(FONT2X_WIDTH*4), 5*(FONT2X_HEIGHT*4))
         love.graphics.setColor(color.brightcyan)
         love.graphics.rectangle("line",639-(5*(FONT2X_WIDTH*4)), 479-(5*(FONT2X_HEIGHT*4)), 5*(FONT2X_WIDTH*4), 5*(FONT2X_HEIGHT*4))
         for i = 1,5 do -- 5 preview rows
@@ -516,6 +518,8 @@ function drawCloseup()
           end
         end
       else
+        love.graphics.setColor(color[game.bgcolorSelected])
+        love.graphics.rectangle("fill",639-(5*(FONT_WIDTH*4)), 479-(5*(FONT_HEIGHT*4)), 5*(FONT_WIDTH*4), 5*(FONT_HEIGHT*4))
         love.graphics.setColor(color.brightcyan)
         love.graphics.rectangle("line",639-(5*(FONT_WIDTH*4)), 479-(5*(FONT_HEIGHT*4)), 5*(FONT_WIDTH*4), 5*(FONT_HEIGHT*4))
         for i = 1,5 do -- 5 preview rows
@@ -530,6 +534,8 @@ function drawCloseup()
     else
       -- cursor is on lower side of viewport
       if selected.textmode == 2 then
+        love.graphics.setColor(color[game.bgcolorSelected])
+        love.graphics.rectangle("fill",639-(5*(FONT2X_WIDTH*4)), 0, 5*(FONT2X_WIDTH*4), 5*(FONT2X_HEIGHT*4))
         love.graphics.setColor(color.brightcyan)
         love.graphics.rectangle("line",639-(5*(FONT2X_WIDTH*4)), 0, 5*(FONT2X_WIDTH*4), 5*(FONT2X_HEIGHT*4))
         for i = 1,5 do -- 5 preview rows
@@ -541,6 +547,8 @@ function drawCloseup()
           end
         end
       else
+        love.graphics.setColor(color[game.bgcolorSelected])
+        love.graphics.rectangle("fill",639-(5*(FONT_WIDTH*4)), 0, 5*(FONT_WIDTH*4), 5*(FONT_HEIGHT*4))
         love.graphics.setColor(color.brightcyan)
         love.graphics.rectangle("line",639-(5*(FONT_WIDTH*4)), 0, 5*(FONT_WIDTH*4), 5*(FONT_HEIGHT*4))
         for i = 1,5 do -- 5 preview rows
@@ -558,16 +566,60 @@ function drawCloseup()
     if game.mousey < 30 then
       -- cursor is on higher side of viewport
       if selected.textmode == 2 then
+        love.graphics.setColor(color[game.bgcolorSelected])
+        love.graphics.rectangle("fill",0, 479-(5*(FONT2X_HEIGHT*4)), 5*(FONT2X_WIDTH*4), 5*(FONT2X_HEIGHT*4))
+        love.graphics.setColor(color.brightcyan)
         love.graphics.rectangle("line",0, 479-(5*(FONT2X_HEIGHT*4)), 5*(FONT2X_WIDTH*4), 5*(FONT2X_HEIGHT*4))
+        for i = 1,5 do -- 5 preview rows
+          for j = 1,5 do -- 5 preview columns
+            if (i-3)+game.mousey > 0 and (j-3)+game.mousex > 0 and (i-3)+game.mousey <= game.canvasy and (j-3)+game.mousex <= game.canvasx then
+              love.graphics.setColor(ansiArt[(i-3)+game.mousey][(((j-3)+game.mousex)*2)-1])
+              love.graphics.print(ansiArt[(i-3)+game.mousey][((j-3)+game.mousex)*2],0+((j-1)*(FONT2X_WIDTH*4)), 479-((6-i)*(FONT2X_HEIGHT*4)))
+            end
+          end
+        end
       else
+        love.graphics.setColor(color[game.bgcolorSelected])
+        love.graphics.rectangle("fill",0, 479-(5*(FONT_HEIGHT*4)), 5*(FONT_WIDTH*4), 5*(FONT_HEIGHT*4))
+        love.graphics.setColor(color.brightcyan)
         love.graphics.rectangle("line",0, 479-(5*(FONT_HEIGHT*4)), 5*(FONT_WIDTH*4), 5*(FONT_HEIGHT*4))
+        for i = 1,5 do -- 5 preview rows
+          for j = 1,5 do -- 5 preview columns
+            if (i-3)+math.ceil(game.mousey/2) > 0 and (j-3)+game.mousex > 0 and (i-3)+math.ceil(game.mousey/2) <= game.canvasy and (j-3)+game.mousex <= game.canvasx then
+              love.graphics.setColor(ansiArt[(i-3)+math.ceil(game.mousey/2)][(((j-3)+game.mousex)*2)-1])
+              love.graphics.print(ansiArt[(i-3)+math.ceil(game.mousey/2)][((j-3)+game.mousex)*2],0+((j-1)*(FONT_WIDTH*4)), 479-((6-i)*(FONT_HEIGHT*4)))
+            end
+          end
+        end
       end
     else
       -- cursor is on lower side of viewport
       if selected.textmode == 2 then
+        love.graphics.setColor(color[game.bgcolorSelected])
+        love.graphics.rectangle("fill",0, 0, 5*(FONT2X_WIDTH*4), 5*(FONT2X_HEIGHT*4))
+        love.graphics.setColor(color.brightcyan)
         love.graphics.rectangle("line",0, 0, 5*(FONT2X_WIDTH*4), 5*(FONT2X_HEIGHT*4))
+        for i = 1,5 do -- 5 preview rows
+          for j = 1,5 do -- 5 preview columns
+            if (i-3)+game.mousey > 0 and (j-3)+game.mousex > 0 and (i-3)+game.mousey <= game.canvasy and (j-3)+game.mousex <= game.canvasx then
+              love.graphics.setColor(ansiArt[(i-3)+game.mousey][(((j-3)+game.mousex)*2)-1])
+              love.graphics.print(ansiArt[(i-3)+game.mousey][((j-3)+game.mousex)*2],0+((j-1)*(FONT2X_WIDTH*4)), 0+((i-1)*(FONT2X_HEIGHT*4)))
+            end
+          end
+        end
       else
+        love.graphics.setColor(color[game.bgcolorSelected])
+        love.graphics.rectangle("fill",0, 0, 5*(FONT_WIDTH*4), 5*(FONT_HEIGHT*4))
+        love.graphics.setColor(color.brightcyan)
         love.graphics.rectangle("line",0, 0, 5*(FONT_WIDTH*4), 5*(FONT_HEIGHT*4))
+        for i = 1,5 do -- 5 preview rows
+          for j = 1,5 do -- 5 preview columns
+            if (i-3)+math.ceil(game.mousey/2) > 0 and (j-3)+game.mousex > 0 and (i-3)+math.ceil(game.mousey/2) <= game.canvasy and (j-3)+game.mousex <= game.canvasx then
+              love.graphics.setColor(ansiArt[(i-3)+math.ceil(game.mousey/2)][(((j-3)+game.mousex)*2)-1])
+              love.graphics.print(ansiArt[(i-3)+math.ceil(game.mousey/2)][((j-3)+game.mousex)*2],0+((j-1)*(FONT_WIDTH*4)), 0+((i-1)*(FONT_HEIGHT*4)))
+            end
+          end
+        end
       end
     end
   end
