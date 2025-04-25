@@ -102,6 +102,9 @@ game.cursory = 1
 game.canvasx = 16
 game.canvasy = 16
 
+-- init pixelArt canvas
+local pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
+
 -- set default char table selected [1..11][1..14]
 game.charx = 1
 game.chary = 1
@@ -321,6 +324,7 @@ function love.load()
   monoFont4s = love.graphics.newFont("fonts/"..FONT, FONT_SIZE*4)
   monoFont2x = love.graphics.newFont("fonts/"..FONT2X, FONT2X_SIZE)
   monoFont2x4s = love.graphics.newFont("fonts/"..FONT2X, FONT2X_SIZE*4)
+  pixelFont = love.graphics.newFont("fonts/"..FONT2X, 1)
   love.graphics.setFont( monoFont )
   -- print(monoFont:getWidth("█"))
   -- print(monoFont:getHeight())
@@ -407,6 +411,7 @@ function clearCanvas()
       ansiArt[i][j*2] = " "
     end
   end
+  pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
 end
 
 ---@param textmode integer 1..2 (1 = 8x16, 2 = 8x8)
@@ -760,6 +765,9 @@ function love.draw()
   -- draw buttons
   drawButtons()
 
+  -- draw pixelArt canvas
+  love.graphics.draw(pixelArt, (game.canvasx+2)*FONT2X_WIDTH, 0)
+
   -- draw text message
   if game.message ~= "" then
     drawMessage( game.message, game.messageViewport )
@@ -774,8 +782,17 @@ function love.update(dt)
   -- mouse button detections
   if love.mouse.isDown(1) and selected.textmode == 2 then
     if (game.mousex >= 1 and game.mousex <= game.canvasx) and (game.mousey >= 1 and game.mousey <= game.canvasy) then
+      -- store selected in ansiArt
       ansiArt[game.mousey][(game.mousex*2)-1] = selected.color
       ansiArt[game.mousey][game.mousex*2] = selected.char
+      -- store selected in pixelArt
+      love.graphics.setCanvas(pixelArt)
+      love.graphics.setFont(pixelFont)
+      love.graphics.setColor(selected.color)
+      love.graphics.print(selected.char, game.mousex, game.mousey)
+      print("store in pixelArt.." .. game.mousex .. "," .. game.mousey)
+      love.graphics.setCanvas()
+
     end
   end
   if love.mouse.isDown(1) and selected.textmode == 1 then
@@ -792,6 +809,7 @@ function love.update(dt)
     game.autosaveCooldown = 0
   end
 
+  -- set pulsing effect color
   if math.floor(game.timeThisSession)%2 == 1 then
     -- odd seconds
     color.pulsingwhite = {1,1,1,(game.timeThisSession%1)} -- using modulo for fading alpha channel
@@ -799,7 +817,8 @@ function love.update(dt)
     -- even seconds
     color.pulsingwhite = {1,1,1,1-(game.timeThisSession%1)} -- using modulo for fading alpha channel
   end
-  -- set coords
+
+  -- set mouse coords
   game.mousex = math.floor(love.mouse.getX()/8)+1 -- coords in font2x starting at 1x1
   game.mousey = math.floor(love.mouse.getY()/8)+1 -- coords in font2x starting at 1x1
 
@@ -938,17 +957,21 @@ function love.keypressed(key, scancode, isrepeat)
     -- "[" / "]" to increase / decrease canvas size (x)
     if key == "[" and game.canvasx > 1 then
       game.canvasx = game.canvasx - 1
+      pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
     end
     if key == "]" and game.canvasx < MAX_CANVAS_X then
       game.canvasx = game.canvasx + 1
+      pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
     end
 
     -- ";" / "'" to increase / decrease canvas size (y)
     if key == ";" and game.canvasy > 1 then
       game.canvasy = game.canvasy - 1
+      pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
     end
     if key == "'" and game.canvasy < MAX_CANVAS_Y then
       game.canvasy = game.canvasy + 1
+      pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
     end
 
     -- "\" to toggle solid background color
