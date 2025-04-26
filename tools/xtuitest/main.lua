@@ -25,7 +25,7 @@ end
 
 local animation = {}
 for i = 1,41 do
-  animation[i] = json.decode(love.filesystem.read("0-autosave_"..i..".xtui"))
+  animation[i] = json.decode(love.filesystem.read("timelapse/0-autosave_"..i..".xtui"))
 end
 
 function love.load()
@@ -38,10 +38,17 @@ end
 
 function love.draw()
   -- Your game draw here
-  love.graphics.setFont (dosFont2x)
-  if math.floor(timeElapsed) < 41 then
-    love.graphics.print(animation[math.floor(timeElapsed)], 0, 0)
-  end
+
+  -- testing timelapse
+--  love.graphics.setFont (dosFont2x)
+--  if math.floor(timeElapsed) < 41 then
+--    love.graphics.print(animation[math.floor(timeElapsed)], 0, 0)
+--  end
+
+  -- draw sample.xtui
+  love.graphics.setFont(dosFont)
+  love.graphics.print(ansiArt, 0, 0)
+
 --  love.graphics.print(canvasx.." , "..canvasy, 0, 300)
 --  love.graphics.printf(ascii,dosFont, 0, 320, 1280, "left")
 end

@@ -296,7 +296,6 @@ function saveData( filename , directory )
   -- save ansiart (flat version)
     local success, message =love.filesystem.write(directory.."/"..game.bgcolorSelected.."-"..filename, json.encode(ansiFlat))
     if success then
-      game.message = 'file created: '..directory.."/"..game.bgcolorSelected.."-"..filename
 	    print ('file created: '..directory.."/"..game.bgcolorSelected.."-"..filename)
     else
       game.message = 'file not created: '..message
@@ -344,6 +343,11 @@ function love.load()
     [8]  = json.decode(love.filesystem.read("xtui/button-08.xtui")),
     [9]  = json.decode(love.filesystem.read("xtui/button-09.xtui")),
     [10] = json.decode(love.filesystem.read("xtui/button-10.xtui")),
+  }
+
+  -- screen 2
+  screen2 = {
+    ["drawmode"] = json.decode(love.filesystem.read("xtui/0-drawmode.xtui")),
   }
 
   -- pointers
@@ -630,14 +634,74 @@ end
 ---@param y integer row using monoFont height FONT_HEIGHT
 function drawBrushes( x, y )
 
+  -- this part is drawing Palette
+  love.graphics.setFont(monoFont)
+  love.graphics.setColor(color.white)
+  love.graphics.print("Foreground", (x+28)*FONT_WIDTH ,(y+2)*FONT_HEIGHT)
+  love.graphics.print("Background", (x+46)*FONT_WIDTH ,(y+2)*FONT_HEIGHT)
+
+  love.graphics.setColor(color[game.bgcolorSelected])
+  love.graphics.print("██\n██", (x+43)*FONT_WIDTH ,(y+1)*FONT_HEIGHT)
+
+  -- draw background first
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle("fill", (x+25)*FONT_WIDTH ,(y+4)*FONT_HEIGHT, 16*FONT_WIDTH, 4*FONT_HEIGHT)
+  love.graphics.rectangle("fill", (x+43)*FONT_WIDTH ,(y+4)*FONT_HEIGHT, 16*FONT_WIDTH, 4*FONT_HEIGHT)
+  love.graphics.rectangle("fill", (x+2)*FONT_WIDTH,(y+1)*FONT_HEIGHT, 2*FONT_WIDTH, 2*FONT_HEIGHT)
+  love.graphics.rectangle("fill", 82*FONT_WIDTH,4*FONT_HEIGHT, 21*FONT_WIDTH, 17*FONT_HEIGHT)
+  love.graphics.rectangle("fill", (x+25)*FONT_WIDTH ,(y+11)*FONT_HEIGHT, 16*FONT_WIDTH, 4*FONT_HEIGHT)
+  love.graphics.rectangle("fill", (x+43)*FONT_WIDTH ,(y+11)*FONT_HEIGHT, 16*FONT_WIDTH, 4*FONT_HEIGHT)
+
+  -- draw brush
   love.graphics.setFont(monoFont2s)
   love.graphics.setColor(selected.color)
   love.graphics.print(selected.char,(x+2)*FONT_WIDTH,(y+1)*FONT_HEIGHT)
   love.graphics.setFont(monoFont)
   love.graphics.setColor(color.white)
   love.graphics.print("Brush", (x+5)*FONT_WIDTH ,(y+2)*FONT_HEIGHT)
+  love.graphics.print("Custom  Palette", (x+35)*FONT_WIDTH ,(y+9)*FONT_HEIGHT)
+  love.graphics.print(" Color  mixer", (x+35)*FONT_WIDTH ,(y+16)*FONT_HEIGHT)
 
   drawCharTable( 82*FONT_WIDTH, 4*FONT_HEIGHT )
+
+  -- draw foreground color
+  love.graphics.setColor(selected.color)
+  love.graphics.print("██\n██", (x+25)*FONT_WIDTH ,(y+1)*FONT_HEIGHT)
+
+  love.graphics.setColor(color[8])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+25)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[9])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+27)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[10])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+29)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[11])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+31)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[12])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+33)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[13])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+35)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[14])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+37)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[15])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+39)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+
+  love.graphics.setColor(color[0])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+43)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[1])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+45)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[2])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+47)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[3])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+49)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[4])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+51)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[5])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+53)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[6])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+55)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+  love.graphics.setColor(color[7])
+  love.graphics.print("██\n▓▓\n▒▒\n░░", (x+57)*FONT_WIDTH ,(y+4)*FONT_HEIGHT)
+
 
 end
 
@@ -705,6 +769,13 @@ function love.draw()
     -- show selected color and char
     love.graphics.setColor(selected.color)
     love.graphics.printf(selected.char, monoFont, FONT_WIDTH, 0, 16, "left")
+  end
+
+  if love.keyboard.isDown("lshift") then
+    -- draw screen 2 "drawmode"
+    love.graphics.setFont(monoFont)
+    love.graphics.setColor(color.white)
+    love.graphics.print(screen2["drawmode"],640, 0)
   end
 
   -- draw brushes
@@ -782,6 +853,9 @@ function love.update(dt)
   -- mouse button detections
   if love.mouse.isDown(1) and selected.textmode == 2 then
     if (game.mousex >= 1 and game.mousex <= game.canvasx) and (game.mousey >= 1 and game.mousey <= game.canvasy) then
+      -- move game cursor
+      game.cursorx = game.mousex
+      game.cursory = game.mousey
       -- store selected in ansiArt
       ansiArt[game.mousey][(game.mousex*2)-1] = selected.color
       ansiArt[game.mousey][game.mousex*2] = selected.char
@@ -797,6 +871,10 @@ function love.update(dt)
   end
   if love.mouse.isDown(1) and selected.textmode == 1 then
     if (game.mousex >= 1 and game.mousex <= game.canvasx) and (game.mousey >= 1 and game.mousey <= game.canvasy*2) then
+      -- move game cursor
+      game.cursorx = game.mousex
+      game.cursory = game.mousey
+      -- store selected in ansiArt
       ansiArt[math.ceil(game.mousey/2)][(game.mousex*2)-1] = selected.color
       ansiArt[math.ceil(game.mousey/2)][game.mousex*2] = selected.char
     end
