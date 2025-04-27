@@ -51,6 +51,15 @@ local charTable = {
   [17] = {string.char(25),string.char(26),string.char(27),string.char(28),string.char(29),string.char(30),string.char(31),string.char(32),string.char(33),string.char(34),string.char(35),},
 }
 
+local selected = {
+  color = color.white,
+  char  = "█",
+  bmp   = "",
+  bmpnumber = 1,
+  viewport = 1,
+  textmode = 2, -- 1 = 8x16, 2 = 8x8
+}
+
 -- cursor text to display when hovering over a fixed 8x8 coordinate
 -- fullscreen 160 x 90
 -- initialize table
@@ -167,15 +176,6 @@ if love.filesystem.getInfo("timelapse") == nil then
     print("Created directory - timelapse")
   end
 end
-
-local selected = {
-  color = color.white,
-  char  = "█",
-  bmp   = "",
-  bmpnumber = 1,
-  viewport = 1,
-  textmode = 2, -- 1 = 8x16, 2 = 8x8
-}
 
 local success = love.filesystem.remove( "bmp/.DS_Store" ) -- cleanup for MacOS
 if success then
@@ -330,6 +330,16 @@ function love.load()
   love.graphics.setFont( monoFont2x )
   -- print(monoFont2x:getWidth("█"))
   -- print(monoFont2x:getHeight())
+
+  -- xtui screens using monoFont
+  -- [scene number][screen 1,screen 2,screen 1 bgcolor, screen 2 bgcolor]
+  screen = {}
+  screen[1] = {
+    [1] = json.decode(love.filesystem.read("xtui/4-xtuisplash1.xtui")),
+    [2] = json.decode(love.filesystem.read("xtui/8-xtuisplash2.xtui")),
+    [3] = 4,
+    [4] = 8,
+  }
 
   -- buttons
   button = {
@@ -844,6 +854,17 @@ function love.draw()
     drawMessage( game.message, game.messageViewport )
   end
 
+  -- draw full screens last
+  love.graphics.setFont(monoFont)
+  love.graphics.setLineWidth(1)
+  love.graphics.setColor(color[screen[1][3]])
+  love.graphics.rectangle("fill",0,0,640,480) -- screen 1 background
+  love.graphics.setColor(color[screen[1][4]])
+  love.graphics.rectangle("fill",640,0,640,480) -- screen 2 background
+  love.graphics.setColor(color.white)
+  love.graphics.print(screen[1][1],0,0) -- screen 1 foreground
+  love.graphics.print(screen[1][2],640,0) -- screen 2 foreground
+
 --  overlayStats.draw() -- Should always be called last
 end
 
@@ -890,10 +911,10 @@ function love.update(dt)
   -- set pulsing effect color
   if math.floor(game.timeThisSession)%2 == 1 then
     -- odd seconds
-    color.pulsingwhite = {1,1,1,(game.timeThisSession%1)} -- using modulo for fading alpha channel
+    color.pulsingwhite = {(game.timeThisSession%1),(game.timeThisSession%1),(game.timeThisSession%1),1} -- using modulo for fading alpha channel
   else
     -- even seconds
-    color.pulsingwhite = {1,1,1,1-(game.timeThisSession%1)} -- using modulo for fading alpha channel
+    color.pulsingwhite = {1-(game.timeThisSession%1),1-(game.timeThisSession%1),1-(game.timeThisSession%1),1} -- using modulo for fading alpha channel
   end
 
   -- set mouse coords
