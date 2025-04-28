@@ -99,6 +99,9 @@ game.autosaveCooldown = 0
 game.message = ""
 game.messageViewport = 1
 
+-- set game scene
+game.scene = "title"
+
 -- detect viewport
 game.width, game.height = love.graphics.getDimensions( )
 print("viewport: "..game.width.."x"..game.height)
@@ -174,6 +177,15 @@ if love.filesystem.getInfo("timelapse") == nil then
   else
     love.filesystem.createDirectory("timelapse")
     print("Created directory - timelapse")
+  end
+end
+if love.filesystem.getInfo("wip") == nil then
+  if game.os == "R36S" then
+    os.execute("mkdir " .. love.filesystem.getSaveDirectory() .. "//wip")
+    print("R36S: created directory - wip")
+  else
+    love.filesystem.createDirectory("wip")
+    print("Created directory - wip")
   end
 end
 
@@ -312,6 +324,44 @@ function saveData( filename , directory )
     f:close()
   end
 end
+
+
+function loadData()
+  local tempArt = json.decode(love.filesystem.read("wip/data.xtui")) -- manually set background
+  local canvasx = 0
+  local canvasy = 0
+  -- check for first instance of \n in table (first \n)
+  local loop = 2
+  while canvasx == 0 do
+  	if string.find(tempArt[loop], "\n") ~= nil then
+  		canvasx = loop/2
+  	end
+  	loop = loop + 2
+  end
+  canvasy = #tempArt/(canvasx*2)
+
+  -- load tempArt into ansiArt
+  game.canvasx = canvasx
+  game.canvasy = canvasy
+  local artRow = 1
+  local artColumn = 1
+  print("Loaded ansiArt data: "canvasx..","..canvasy)
+  for i = 1,canvasx*canvasy do
+    if artColumn <= canvasx then
+      ansiArt[artRow][(artColumn*2)-1] = tempArt[(i*2)-1]
+      ansiArt[artRow][artColumn*2] = tempArt[i*2]
+      artColumn = artColumn + 1
+    else
+      artColumn = 1
+      artRow = artRow + 1
+      ansiArt[artRow][(artColumn*2)-1] = tempArt[(i*2)-1]
+      ansiArt[artRow][artColumn*2] = tempArt[i*2]
+      artColumn = artColumn + 1
+    end
+  end
+
+end
+
 
 function love.load()
   https = runtimeLoader.loadHTTPS()
@@ -854,16 +904,18 @@ function love.draw()
     drawMessage( game.message, game.messageViewport )
   end
 
-  -- draw full screens last
-  love.graphics.setFont(monoFont)
-  love.graphics.setLineWidth(1)
-  love.graphics.setColor(color[screen[1][3]])
-  love.graphics.rectangle("fill",0,0,640,480) -- screen 1 background
-  love.graphics.setColor(color[screen[1][4]])
-  love.graphics.rectangle("fill",640,0,640,480) -- screen 2 background
-  love.graphics.setColor(color.white)
-  love.graphics.print(screen[1][1],0,0) -- screen 1 foreground
-  love.graphics.print(screen[1][2],640,0) -- screen 2 foreground
+  if game.scene == "title" then
+    -- draw full screens last
+    love.graphics.setFont(monoFont)
+    love.graphics.setLineWidth(1)
+    love.graphics.setColor(color[screen[1][3]])
+    love.graphics.rectangle("fill",0,0,640,480) -- screen 1 background
+    love.graphics.setColor(color[screen[1][4]])
+    love.graphics.rectangle("fill",640,0,640,480) -- screen 2 background
+    love.graphics.setColor(color.white)
+    love.graphics.print(screen[1][1],0,0) -- screen 1 foreground
+    love.graphics.print(screen[1][2],640,0) -- screen 2 foreground
+  end
 
 --  overlayStats.draw() -- Should always be called last
 end
@@ -1152,6 +1204,12 @@ function love.keypressed(key, scancode, isrepeat)
   if key == "return" and game.message ~= "" then
     game.message = ""
   end
+
+  if key == "f2" then
+    game.scene = "draw"
+    loadData()
+  end
+
 
   if key == "f3" then
     bmpFiles = love.filesystem.getDirectoryItems( "bmp" )
