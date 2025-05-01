@@ -64,17 +64,37 @@ local selected = {
 -- fullscreen 160 x 90
 -- initialize table
 local hover = {}
-for i = 1,90 do
+for i = 1,160 do -- number of columns (x)
   hover[i] = {}
-  for j = 1,160 do
+  for j = 1,90 do -- number of rows (y)
     hover[i][j] = ""
   end
 end
 -- enter test data
-hover[8][8] = "Hero"
-hover[9][8] = "Hero"
-hover[8][12] = "Monster"
-hover[9][12] = "Monster"
+hover[13][7] = "chair"
+hover[13][8] = "chair legs"
+hover[28][11] = "bed"
+hover[29][11] = "bed"
+hover[28][12] = "bottom of bed"
+hover[29][12] = "bottom of bed"
+hover[29][3] = "bookshelf"
+hover[29][4] = "bookshelf"
+hover[29][5] = "bookshelf"
+hover[29][6] = "bookshelf"
+hover[8][11] = "carpet"
+hover[29][25] = "wardrobe"
+hover[29][26] = "wardrobe"
+hover[29][27] = "wardrobe"
+hover[29][28] = "wardrobe"
+hover[12][5] = "desk"
+hover[12][6] = "desk and something"
+hover[13][5] = "desk"
+hover[13][6] = "desk and something"
+hover[14][5] = "desk"
+hover[14][6] = "desk and something"
+hover[15][5] = "desk"
+hover[15][6] = "desk and something"
+hover[1][31] = "hole in the wall"
 
 local click = {}
 for i = 1,90 do
@@ -84,10 +104,26 @@ for i = 1,90 do
   end
 end
 -- enter test data
-click[8][8] = "Is that some brocolli stuck between your teeth? Ewww..."
-click[9][8] = "Is that some brocolli stuck between your teeth? Ewww..."
-click[8][12] = "This monster looks better than you in red. You need a fashion reset as soon as possible, preferrably without yourself as the consultant."
-click[9][12] = "This monster looks better than you in red. You need a fashion reset as soon as possible, preferrably without yourself as the consultant."
+click[13][7] = "This is a...chair."
+click[13][8] = "Nice! These are chair legs."
+click[28][11] = "You sleep here. zZZ, very cozy."
+click[29][11] = "You sleep here. zZZ, very cozy."
+click[28][12] = "Come on now, don't look so tense. There's no monster under the bed."
+click[29][12] = "Come on now, don't look so tense. There's no monster under the bed."
+click[29][3] = "The books on here are neatly arranged by you. Ranging from shortest to tallest, thinnest to thickest."
+click[29][4] = "There is a gap."
+click[29][5] = "The books on here are neatly arranged by you. Ranging from shortest to tallest, thinnest to thickest."
+click[29][6] = "The books on here are neatly arranged by you. Ranging from shortest to tallest, thinnest to thickest."
+click[8][11] = "The corner of the carpet is curled up."
+click[29][25] = "It's open and there's HEAPS of clothes. Uh oh, this one is messy, don't let your mom see."
+click[29][26] = "You see a part of the pile that is higher than the rest."
+click[29][27] = "Geez did you really need this much clothes?"
+click[29][28] = "It'll take FOREVER to clean this wardrobe up."
+click[12][6] = "The desk is very plain and bare except for one thing."
+click[13][6] = "The desk is very plain and bare except for one thing."
+click[14][6] = "The desk is very plain and bare except for one thing."
+click[15][6] = "The desk is very plain and bare except for one thing."
+click[1][31] = "What's this?"
 
 local game = {}
 
@@ -820,6 +856,7 @@ function love.draw()
   -- draw tooltip
   local tooltip = "C - clear canvas\n"
   tooltip = tooltip .. "= - toggle textmode "..selected.textmode.."\n"
+  tooltip = tooltip .. "m - change between play and edit mode\n"
   tooltip = tooltip .. "[ ] - change canvas width "..game.canvasx.."\n"
   tooltip = tooltip .. "; ' - change canvas height "..game.canvasy.."\n"
   tooltip = tooltip .. "/ - change background color "..game.bgcolorSelected.."\n"
@@ -881,17 +918,6 @@ function love.draw()
   love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
 
 
-  -- draw mouse pointer as graphic wand, hover tip
-  -- draw hover shadow first
-  love.graphics.setFont(monoFont)
-  love.graphics.setColor(color.black)
-  love.graphics.print(hover[game.mousey][game.mousex],(game.mousex*FONT2X_WIDTH)+2,((game.mousey+2)*FONT2X_HEIGHT)+2)
-  -- draw pointer wand and hover text
-  love.graphics.setColor(color.white)
-  love.graphics.draw(pointer, love.mouse.getX(), love.mouse.getY())
-  love.graphics.print(hover[game.mousey][game.mousex],game.mousex*FONT2X_WIDTH,(game.mousey+2)*FONT2X_HEIGHT)
-
-
   -- draw viewports (debug only)
   love.graphics.setColor(color.brightcyan)
   love.graphics.setLineWidth(1)
@@ -933,9 +959,22 @@ function love.draw()
   -- draw pixelArt canvas
   love.graphics.draw(pixelArt, (game.canvasx+2)*FONT2X_WIDTH, 0)
 
-  -- draw text message
-  if game.message ~= "" then
-    drawMessage( game.message, game.messageViewport )
+
+  -- draw hover and click items during "play" mode
+  -- draw hover shadow first
+  if game.mode == "play" then
+    love.graphics.setFont(monoFont)
+    love.graphics.setColor(color.black)
+    love.graphics.print(hover[game.mousex][game.mousey],(game.mousex*FONT2X_WIDTH)+2,((game.mousey+2)*FONT2X_HEIGHT)+2)
+    -- draw hover text
+    love.graphics.setColor(color.white)
+    love.graphics.draw(pointer, love.mouse.getX(), love.mouse.getY())
+    love.graphics.print(hover[game.mousex][game.mousey],game.mousex*FONT2X_WIDTH,(game.mousey+2)*FONT2X_HEIGHT)
+
+    -- draw click - text message
+    if game.message ~= "" then
+      drawMessage( game.message, game.messageViewport )
+    end
   end
 
   if game.scene == "title" then
@@ -961,7 +1000,7 @@ function love.update(dt)
   -- Your game update here
 
   -- mouse button detections
-  if love.mouse.isDown(1) and selected.textmode == 2 then
+  if love.mouse.isDown(1) and selected.textmode == 2 and game.mode == "edit" then
     if (game.mousex >= 1 and game.mousex <= game.canvasx) and (game.mousey >= 1 and game.mousey <= game.canvasy) then
       -- move game cursor
       game.cursorx = game.mousex
@@ -976,10 +1015,10 @@ function love.update(dt)
       love.graphics.print(selected.char, game.mousex, game.mousey)
       print("store in pixelArt.." .. game.mousex .. "," .. game.mousey)
       love.graphics.setCanvas()
-
     end
   end
-  if love.mouse.isDown(1) and selected.textmode == 1 then
+
+  if love.mouse.isDown(1) and selected.textmode == 1 and game.mode == "edit" then
     if (game.mousex >= 1 and game.mousex <= game.canvasx) and (game.mousey >= 1 and game.mousey <= game.canvasy*2) then
       -- move game cursor
       game.cursorx = game.mousex
@@ -1022,7 +1061,7 @@ function love.update(dt)
   game.statusbar = game.cursorx..","..game.cursory.." ("..game.mousex..","..game.mousey..") Time:"..math.floor(game.timeThisSession)
   if game.os ~= "R36S" then
     -- statusbar for all other platforms
-    game.statusbar = game.statusbar .. " ["..game.os.."]"
+    game.statusbar = game.statusbar .. " ["..game.os.."] | " .. game.mode
   else
     -- statusbar for R36S
     game.statusbar = game.statusbar .. " ["..game.os.."] L1:Change Color R1:Change Viewport"
@@ -1130,6 +1169,15 @@ function love.keypressed(key, scancode, isrepeat)
       end
       if key == "right" and game.playerx < 80 then -- 80 is the last x coord for screen 1
         game.playerx = game.playerx + 1
+      end
+    end
+
+    -- toggle game mode "play" , "edit"
+    if key == "m" or key == "M" then
+      if game.mode == "play" then
+        game.mode = "edit"
+      else
+        game.mode = "play"
       end
     end
 
@@ -1265,7 +1313,7 @@ function love.mousepressed( x, y, button, istouch, presses )
   }
 
   -- set game message based on click heatmap
-  game.message = click[game.mousey][game.mousex]
+  game.message = click[game.mousex][game.mousey]
 
   if mouse.y >= 1 and mouse.y <= 8 then -- first bright palette row
     if mouse.x == 63 or mouse.x == 64 then -- black
