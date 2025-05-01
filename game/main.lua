@@ -99,8 +99,15 @@ game.autosaveCooldown = 0
 game.message = ""
 game.messageViewport = 1
 
+-- set game mode
+-- "edit" - game editor mode ; "play" - game playing mode
+game.mode = "play"
+
 -- set game scene
 game.scene = "title"
+
+-- set game script
+game.script = ""
 
 -- detect viewport
 game.width, game.height = love.graphics.getDimensions( )
@@ -109,6 +116,18 @@ print("viewport: "..game.width.."x"..game.height)
 -- set default cursor coord
 game.cursorx = 1
 game.cursory = 1
+
+-- set default player coord (shown as "P" while standing, "p" while squatting)
+-- 0,0 is off-screen; coord follows monoFont2x 8x8px 80x60 chars, screen 1 only)
+-- for movement, x increments by 1, y increments by 2
+-- movement using arrow keys while in "play" mode
+game.playerx = 41
+game.playery = 31 -- MUST be odd number
+
+-- set default player display char
+-- "P" - standing player
+-- "p" - crouching player
+game.playerChar = "P"
 
 -- set default canvas size (16x16)
 game.canvasx = 16
@@ -345,7 +364,7 @@ function loadData()
   game.canvasy = canvasy
   local artRow = 1
   local artColumn = 1
-  print("Loaded ansiArt data: "canvasx..","..canvasy)
+  print("Loaded ansiArt data: "..canvasx..","..canvasy)
   for i = 1,canvasx*canvasy do
     if artColumn <= canvasx then
       ansiArt[artRow][(artColumn*2)-1] = tempArt[(i*2)-1]
@@ -467,6 +486,21 @@ function drawButtons()
   for i = 1,10 do
     love.graphics.print(button[i],0+((i-1)*128),480)
   end
+end
+
+
+---@param x integer coordinate using monoFont2x dimensions
+---@param y integer coordinate using monoFont2x dimensions
+function drawPlayer(x,y)
+
+  -- make it blinking with alpha
+  love.graphics.setFont(monoFont)
+  if(math.floor(game.timeThisSession))%2 == 1 then
+    love.graphics.setColor(1,1,1,1)
+  else
+    love.graphics.setColor(0.5,0.5,0.5,1)
+  end
+  love.graphics.print(game.playerChar,(game.playerx-1)*FONT2X_WIDTH, (game.playery-1)*FONT2X_HEIGHT)
 end
 
 function clearCanvas()
@@ -917,6 +951,9 @@ function love.draw()
     love.graphics.print(screen[1][2],640,0) -- screen 2 foreground
   end
 
+  -- draw Player after everything else
+  drawPlayer()
+
 --  overlayStats.draw() -- Should always be called last
 end
 
@@ -1079,29 +1116,20 @@ function love.keypressed(key, scancode, isrepeat)
 
   else
     -- input for everything else (computers)
-    -- arrow keys for moving cursor when BMP already selected
-    if selected.bmp ~= "" then
-      if key == "up" and game.cursory > 1 then
-        game.cursory = game.cursory - 1
+
+    -- arrow keys for moving Player when in game Play mode
+    if game.mode == "play" then
+      if key == "up" and game.playery > 1 then
+        game.playery = game.playery - 2
       end
-      if key == "down" and game.cursory < math.floor(game.height/8) and game.cursory < game.canvasy then
-        game.cursory = game.cursory + 1
+      if key == "down" and game.playery < 59 then -- 59+1 is the last y coord for screen 1
+        game.playery = game.playery + 2
       end
-      if key == "left" and game.cursorx > 1 then
-        game.cursorx = game.cursorx - 1
+      if key == "left" and game.playerx > 1 then
+        game.playerx = game.playerx - 1
       end
-      if key == "right" and game.cursorx < math.floor(game.width/8) and game.cursorx < game.canvasx then
-        game.cursorx = game.cursorx + 1
-      end
-    else
-      -- cursor for selecting BMP
-      if key == "up" and selected.bmpnumber > 1 then
-        selected.bmpnumber = selected.bmpnumber - 1
-        bitmap = love.graphics.newImage( "bmp/"..bmpFiles[selected.bmpnumber])
-      end
-      if key == "down" and selected.bmpnumber < #bmpFiles then
-        selected.bmpnumber = selected.bmpnumber + 1
-        bitmap = love.graphics.newImage( "bmp/"..bmpFiles[selected.bmpnumber])
+      if key == "right" and game.playerx < 80 then -- 80 is the last x coord for screen 1
+        game.playerx = game.playerx + 1
       end
     end
 
