@@ -15,13 +15,98 @@ should be variable to allow making UI assets
 64x64
 ]]
 
-love.filesystem.setIdentity("XTUIdraw") -- for R36S file system compatibility
-love.mouse.setVisible( false ) -- make mouse cursor invis, use text cursor
-love.graphics.setDefaultFilter("nearest", "nearest") -- for nearest neighbour, pixelart style
+--[[
+Steam Deck : Game Mode
+input mode : WASD + Mouse
 
-https = nil
-local overlayStats = require("lib.overlayStats")
-local runtimeLoader = require("runtime.loader")
+L1 - scroll wheel down
+R1 - scroll wheel up
+L2 - Right mouse click
+R2 - Left mouse click
+
+Select - Tab
+Start - Esc
+
+Left Trackpad
+up - 1
+down - 3
+left - 4
+right - 2
+
+Right Trackpad
+mouse movement
+click - left mouse click
+
+D-Pad
+up - up
+down - down
+left - left
+right - right
+
+Left joystick
+up - w
+down - s
+left - a
+right - d
+click - shift
+
+right joystick
+joystick mouse
+click - left mouse click
+
+Face buttons
+A - space
+B - e
+X - r
+Y - f
+
+---
+
+Steam deck desktop mode
+
+select - tab
+start - escape
+
+A - return
+B - escape
+X - (raise virtual keyboard)
+Y - space
+
+left trackpad
+mouse scroll (hard to control)
+
+right trackpad
+mouse movement
+
+left joystick
+up - up
+down - down
+left - left
+right - right
+
+d-pad
+up - up
+down - down
+left - left
+right - right
+
+L1 - lctrl
+L2 - right mouse click
+
+R1 - lalt
+L2 - left mouse click
+
+L4 - lshift
+L5 - lgui
+
+R4 - pageup
+R5 - pagedown
+
+]]
+
+love.filesystem.setIdentity("XTUIdraw") -- for R36S file system compatibility
+love.mouse.setVisible( false ) -- make mouse cursor invis, use bitmap cursor
+love.graphics.setDefaultFilter("nearest", "nearest") -- for nearest neighbour, pixelart style
 
 local json = require("lib.json")
 local ansi = require("lib.ansi")
@@ -70,31 +155,7 @@ for i = 1,160 do -- number of columns (x)
     hover[i][j] = ""
   end
 end
--- enter test data
-hover[13][7] = "chair"
-hover[13][8] = "chair legs"
-hover[28][11] = "bed"
-hover[29][11] = "bed"
-hover[28][12] = "bottom of bed"
-hover[29][12] = "bottom of bed"
-hover[29][3] = "bookshelf"
-hover[29][4] = "bookshelf"
-hover[29][5] = "bookshelf"
-hover[29][6] = "bookshelf"
-hover[8][11] = "carpet"
-hover[29][25] = "wardrobe"
-hover[29][26] = "wardrobe"
-hover[29][27] = "wardrobe"
-hover[29][28] = "wardrobe"
-hover[12][5] = "desk"
-hover[12][6] = "desk and something"
-hover[13][5] = "desk"
-hover[13][6] = "desk and something"
-hover[14][5] = "desk"
-hover[14][6] = "desk and something"
-hover[15][5] = "desk"
-hover[15][6] = "desk and something"
-hover[1][31] = "hole in the wall"
+-- enter game data
 
 local click = {}
 for i = 1,160 do -- number of columns (x)
@@ -103,27 +164,7 @@ for i = 1,160 do -- number of columns (x)
     click[i][j] = ""
   end
 end
--- enter test data
-click[13][7] = "This is a...chair."
-click[13][8] = "Nice! These are chair legs."
-click[28][11] = "You sleep here. zZZ, very cozy."
-click[29][11] = "You sleep here. zZZ, very cozy."
-click[28][12] = "Come on now, don't look so tense. There's no monster under the bed."
-click[29][12] = "Come on now, don't look so tense. There's no monster under the bed."
-click[29][3] = "The books on here are neatly arranged by you. Ranging from shortest to tallest, thinnest to thickest."
-click[29][4] = "There is a gap."
-click[29][5] = "The books on here are neatly arranged by you. Ranging from shortest to tallest, thinnest to thickest."
-click[29][6] = "The books on here are neatly arranged by you. Ranging from shortest to tallest, thinnest to thickest."
-click[8][11] = "The corner of the carpet is curled up."
-click[29][25] = "It's open and there's HEAPS of clothes. Uh oh, this one is messy, don't let your mom see."
-click[29][26] = "You see a part of the pile that is higher than the rest."
-click[29][27] = "Geez did you really need this much clothes?"
-click[29][28] = "It'll take FOREVER to clean this wardrobe up."
-click[12][6] = "The desk is very plain and bare except for one thing."
-click[13][6] = "The desk is very plain and bare except for one thing."
-click[14][6] = "The desk is very plain and bare except for one thing."
-click[15][6] = "The desk is very plain and bare except for one thing."
-click[1][31] = "What's this?"
+-- enter game data
 
 local game = {}
 
@@ -140,10 +181,10 @@ game.messageViewport = 1
 
 -- set game mode
 -- "edit" - game editor mode ; "play" - game playing mode
-game.mode = "play"
+game.mode = "edit"
 
 -- set game scene
-game.scene = "title"
+game.scene = "drawing" -- anything but "title" to prevent showing the title screens
 
 -- set game script
 game.script = ""
@@ -181,7 +222,7 @@ game.chary = 1
 
 -- set default color number selected
 game.colorSelected = 15
-game.bgcolorSelected = 0
+game.bgcolorSelected = 0 -- 16 is transparent, 0-15 is solid color
 
 -- detect system OS
 game.os = love.system.getOS() -- "OS X", "Windows", "Linux", "Android" or "iOS"
@@ -422,7 +463,6 @@ end
 
 
 function love.load()
-  https = runtimeLoader.loadHTTPS()
   -- Your game load here
 
   -- fonts
@@ -438,6 +478,9 @@ function love.load()
   love.graphics.setFont( monoFont2x )
   -- print(monoFont2x:getWidth("█"))
   -- print(monoFont2x:getHeight())
+
+  -- bitmap
+  bitmap = love.graphics.newImage("bmp/default.png")
 
   -- xtui screens using monoFont
   -- [scene number][screen 1,screen 2,screen 1 bgcolor, screen 2 bgcolor]
@@ -474,7 +517,6 @@ function love.load()
   local tempData = love.filesystem.read("xtui/colorpalette_16.xtui")
   colorpalette = json.decode(tempData)
 
-  overlayStats.load() -- Should always be called last
 end
 
 ---@param xtui table containing color tables and text
@@ -597,6 +639,12 @@ function drawArtCanvas(textmode, bgcolor)
     love.graphics.rectangle( "fill", 0, 0, (game.canvasx)*FONT2X_WIDTH, (game.canvasy)*FONT2X_HEIGHT)
   else
     love.graphics.rectangle( "fill", 0, 0, (game.canvasx)*FONT_WIDTH, (game.canvasy)*FONT_HEIGHT)
+  end
+
+  -- draw the bitmap image to be traced
+  if bitmap ~= nil and not(love.keyboard.isDown("lctrl")) then -- hold L1 to make bitmap disappear
+    love.graphics.setColor( color.white )
+    love.graphics.draw( bitmap, 0, 0, 0, 1, 1 ) -- rotation=0, scalex=1, scaley=1
   end
 
   -- draw ansiArt
@@ -871,12 +919,6 @@ function love.draw()
   love.graphics.printf(tooltip, 640+(40*FONT_WIDTH), (29-8)*FONT_HEIGHT, 320, "left")
 
 
-  -- draw the bitmap image to be traced
-  if bitmap ~= nil then
-    love.graphics.setColor( color.white )
-    love.graphics.draw( bitmap, 0, 0, 0, 8, 8 ) -- rotation=0, scalex=8, scaley=8
-  end
-
   -- render the ansiArt area
   drawArtCanvas(selected.textmode, game.bgcolorSelected)
 
@@ -905,12 +947,12 @@ function love.draw()
     love.graphics.printf(selected.char, monoFont, FONT_WIDTH, 0, 16, "left")
   end
 
-  if love.keyboard.isDown("lshift") then
+--  if love.keyboard.isDown("lshift") then
     -- draw screen 2 "drawmode"
-    love.graphics.setFont(monoFont)
-    love.graphics.setColor(color.white)
-    love.graphics.print(screen2["drawmode"],640, 0)
-  end
+--    love.graphics.setFont(monoFont)
+--    love.graphics.setColor(color.white)
+--    love.graphics.print(screen2["drawmode"],640, 0)
+--  end
 
   -- draw brushes
   drawBrushes( 80, 0)
@@ -918,8 +960,11 @@ function love.draw()
   -- draw cursor
   love.graphics.setColor( color.pulsingwhite )
   love.graphics.setLineWidth(1)
-  love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
-
+  if selected.textmode == 2 then
+    love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT2X_WIDTH, FONT2X_HEIGHT)
+  else
+    love.graphics.rectangle( "line" , (game.cursorx-1)*8, (game.cursory-1)*8, FONT_WIDTH, FONT_HEIGHT)
+  end
 
   -- draw viewports (debug only)
   love.graphics.setColor(color.brightcyan)
@@ -973,10 +1018,11 @@ function love.draw()
     love.graphics.setColor(color.white)
     love.graphics.print(hover[game.mousex][game.mousey],game.mousex*FONT2X_WIDTH,(game.mousey+2)*FONT2X_HEIGHT)
 
-    -- draw click - text message
-    if game.message ~= "" then
-      drawMessage( game.message, game.messageViewport )
-    end
+  end
+
+  -- draw click - text message
+  if game.message ~= "" then
+    drawMessage( game.message, game.messageViewport )
   end
 
   -- draw pointer
@@ -997,10 +1043,9 @@ function love.draw()
     love.graphics.print(screen[1][2],640,0) -- screen 2 foreground
   end
 
-  -- draw Player after everything else
-  drawPlayer()
+  -- draw Player after everything else (not used now for editing)
+  -- drawPlayer()
 
---  overlayStats.draw() -- Should always be called last
 end
 
 function love.update(dt)
@@ -1074,50 +1119,59 @@ function love.update(dt)
     game.statusbar = game.statusbar .. " ["..game.os.."] L1:Change Color R1:Change Viewport"
   end
 
-  overlayStats.update(dt) -- Should always be called last
 end
 
 function love.keypressed(key, scancode, isrepeat)
   print("key:"..key.." scancode:"..scancode.." isrepeat:"..tostring(isrepeat))
   if key == "escape" and love.system.getOS() ~= "Web" and game.insertMode == false then
-    love.event.quit()
-  else
---    overlayStats.handleKeyboard(key) -- Should always be called last
+    -- love.event.quit()
+    -- with steam deck desktop mode, it's too easy to trigger "escape"
+    -- use a menu option or a click area to quit
   end
 
-  -- input for R36S
-  if game.os == "R36S" then
-    -- W A S D for moving cursor
-    if key == "w" and game.cursory > 1 then
-      game.cursory = game.cursory - 1
+  -- steam deck desktop mode inputs
+
+  -- "lshift" button L4 for quicksave
+  if key == "lshift" then
+    local files = love.filesystem.getDirectoryItems( "quicksave" )
+    saveData("quicksave_"..(#files)..".xtui","quicksave") -- running numbers for quicksaves
+    game.message = "Quicksaved - " .. "quicksave_"..(#files)..".xtui"
+  end
+
+  -- R4 button "pageup" + arrow keys to change canvas size
+  if love.keyboard.isDown("pageup") then
+    -- arrow keys to select char
+    if key == "up" and game.canvasy > 1 then
+      game.canvasy = game.canvasy - 1
     end
-    if key == "s" and game.cursory < math.floor(game.height/8) and game.cursory < game.canvasy then
-      game.cursory = game.cursory + 1
+    if key == "down" and game.canvasy < 60 then
+      game.canvasy = game.canvasy + 1
     end
-    if key == "a" and game.cursorx > 1 then
-      game.cursorx = game.cursorx - 1
+    if key == "left" and game.canvasx > 1 then
+      game.canvasx = game.canvasx - 1
     end
-    if key == "d" and game.cursorx < math.floor(game.width/8) and game.cursorx < game.canvasx then
-      game.cursorx = game.cursorx + 1
+    if key == "right" and game.canvasx < 80 then
+      game.canvasx = game.canvasx + 1
     end
-    -- (A) button to draw colored char
-    if key == "z" then
-      ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
-      ansiArt[game.cursory][game.cursorx*2] = selected.char
+  end
+
+  -- "tab" to change textmode
+  if key == "tab" then
+    if selected.textmode == 2 then
+      selected.textmode = 1
+      print(game.cursory)
+      game.cursory = (game.cursory * 2) - 1
+      print(game.cursory)
+    else
+      selected.textmode = 2
+      print(game.cursory)
+      game.cursory = math.ceil(game.cursory / 2)
+      print(game.cursory)
     end
-    -- (B) button to clear char
-    if key == "lshift" then
-      ansiArt[game.cursory][(game.cursorx*2)-1] = color.darkgrey
-      ansiArt[game.cursory][game.cursorx*2] = " "
-    end
-    -- (X) button to eyedrop char
-    if key == "space" then
-      selected.char = ansiArt[game.cursory][game.cursorx*2]
-    end
-    -- (Y) button to eyedrop color
-    if key == "b" then
-      selected.color = ansiArt[game.cursory][(game.cursorx*2)-1]
-    end
+  end
+
+  -- "lalt + arrows" to select char
+  if love.keyboard.isDown("lalt") then
     -- arrow keys to select char
     if key == "up" and game.chary > 1 then
       game.chary = game.chary - 1
@@ -1135,214 +1189,123 @@ function love.keypressed(key, scancode, isrepeat)
       game.charx = game.charx + 1
       selected.char = charTable[game.chary][game.charx]
     end
-    -- L1 (l) to toggle colors
-    if key == "l" then
-      if game.colorSelected == 15 then
-        game.colorSelected = 0
-      else
-        game.colorSelected = game.colorSelected + 1
-      end
-      selected.color = color[game.colorSelected]
-    end
+  end
 
-    -- R1 (r) to toggle viewports
-    if key == "r" then
-      if selected.viewport == 4 then
-        selected.viewport = 1
-      else
-        selected.viewport = selected.viewport + 1
-      end
-    end
+  -- input while textmode == 2
+  if selected.textmode == 2 then
 
-    -- Start (return) to quicksave
-    if key == "return" then
-      local files = love.filesystem.getDirectoryItems( "quicksave" )
-      saveData("quicksave_"..(#files)..".xtui","quicksave") -- running numbers for quicksaves
-    end
-
-    -- L1 (l) to toggle colors (for testing)
-    if key == "l" then
-      if game.colorSelected == 15 then
-        game.colorSelected = 0
-      else
-        game.colorSelected = game.colorSelected + 1
+    -- move cursor when R1 ("lalt") is not held
+    if not(love.keyboard.isDown("lalt")) then
+      if key == "up" and game.cursory > 1 then
+        game.cursory = game.cursory - 1
       end
-      selected.color = color[game.colorSelected]
-    end
-
-  else
-    -- input for everything else (computers)
-
-    -- arrow keys for moving Player when in game Play mode
-    if game.mode == "play" then
-      if key == "up" and game.playery > 1 then
-        game.playery = game.playery - 2
+      if key == "down" and game.cursory < game.canvasy then
+        game.cursory = game.cursory + 1
       end
-      if key == "down" and game.playery < 59 then -- 59+1 is the last y coord for screen 1
-        game.playery = game.playery + 2
+      if key == "left" and game.cursorx > 1 then
+        game.cursorx = game.cursorx - 1
       end
-      if key == "left" and game.playerx > 1 then
-        game.playerx = game.playerx - 1
-      end
-      if key == "right" and game.playerx < 80 then -- 80 is the last x coord for screen 1
-        game.playerx = game.playerx + 1
+      if key == "right" and game.cursorx < game.canvasx then
+        game.cursorx = game.cursorx + 1
       end
     end
 
-    -- checking game.insertMode for keyboard entry
-    if game.insertMode == false then
-
-      -- toggle game mode "play" , "edit"
-      if (key == "m" or key == "M") then
-        if game.mode == "play" then
-          game.mode = "edit"
-        else
-          game.mode = "play"
-        end
-      end
-
-      -- "[" / "]" to increase / decrease canvas size (x)
-      if key == "[" and game.canvasx > 1 then
-        game.canvasx = game.canvasx - 1
-        pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
-      end
-      if key == "]" and game.canvasx < MAX_CANVAS_X then
-        game.canvasx = game.canvasx + 1
-        pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
-      end
-
-      -- ";" / "'" to increase / decrease canvas size (y)
-      if key == ";" and game.canvasy > 1 then
-        game.canvasy = game.canvasy - 1
-        pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
-      end
-      if key == "'" and game.canvasy < MAX_CANVAS_Y then
-        game.canvasy = game.canvasy + 1
-        pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
-      end
-
-      -- "/" to toggle solid background color
-      if key == "/" then
-        game.bgcolorSelected = game.bgcolorSelected + 1
-        if game.bgcolorSelected == 17 then
-          game.bgcolorSelected = 0
-        end
-      end
-
-      -- clear canvas
-      if key == "c" then
-        clearCanvas()
-      end
-
-      -- toggle textmode
-      if key == "=" then
-        if selected.textmode == 2 then
-          selected.textmode = 1
-        else
-          selected.textmode = 2
-        end
-      end
-
-      if key == "i" then
-        game.insertMode = true
-      end
-
-    else
-      -- game.insertMode == true
-      if key == "escape" then
-        game.insertMode = false
-      else
-        if #key == 1 then -- single char only
-          ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
-          ansiArt[game.cursory][game.cursorx*2] = key
-        end
-        if game.cursorx < game.canvasx then -- not at canvas edge yet, can move cursorx
-          game.cursorx = game.cursorx + 1
-        end
-
-      end
-
-    end -- game.insertMode check
-
-
-    -- ralt (right option) to draw char
-    if key == "ralt" then
+    -- draw char at cursor
+    if key == "return" and game.message == "" then
       ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
       ansiArt[game.cursory][game.cursorx*2] = selected.char
-    end
-    -- backspace to delete char
-    if key == "backspace" then
-      if game.textmode == 2 then
-        ansiArt[game.cursory][(game.cursorx*2)-1] = color.darkgrey
-        ansiArt[game.cursory][game.cursorx*2] = " "
-        if game.cursorx > 1 then
-          -- not at the first column, shift game cursor backwards
-          game.cursorx = game.cursorx - 1
-        end
-      else -- game.textmode == 1
-        -- do deletion for monoFont spacing
-      end
-    end
-    -- lalt to eyedrop char
-    if key == "lalt" then
-      selected.char = ansiArt[game.cursory][game.cursorx*2]
-    end
-    -- lctrl to eyedrop color
-    if key == "lctrl" then
-      selected.color = ansiArt[game.cursory][(game.cursorx*2)-1]
+
+      -- store selected in pixelArt
+      love.graphics.setCanvas(pixelArt)
+      love.graphics.setFont(pixelFont)
+      love.graphics.setColor(selected.color)
+      love.graphics.print(selected.char, game.cursorx, game.cursory)
+      print("store in pixelArt.." .. game.cursorx .. "," .. game.cursory)
+      love.graphics.setCanvas()
+
     end
 
-    -- char selection with rshift held, and WASD for selecting
-    if love.keyboard.isDown("rshift") and game.insertMode == false then
-      -- w / s to select charTable row (game.chary)
-      if key == "w" and game.chary > 1 then
-        game.chary = game.chary - 1
-        selected.char = charTable[game.chary][game.charx]
+    -- delete char at cursor
+    if key == "space" then
+      ansiArt[game.cursory][(game.cursorx*2)-1] = color.darkgrey
+      ansiArt[game.cursory][game.cursorx*2] = " "
+      if game.cursorx > 1 then
+        -- not at the first column, shift game cursor backwards
+        game.cursorx = game.cursorx - 1
       end
-      if key == "s" and game.chary < 17 then
-        game.chary = game.chary + 1
-        selected.char = charTable[game.chary][game.charx]
-      end
-      -- a / d to select charTable column (game.charx)
-      if key == "a" and game.charx > 1 then
-        game.charx = game.charx - 1
-        selected.char = charTable[game.chary][game.charx]
-      end
-      if key == "d" and game.charx < 11 then
-        game.charx = game.charx + 1
-        selected.char = charTable[game.chary][game.charx]
-      end
+      -- store selected in pixelArt (only works for black background)
+      love.graphics.setCanvas(pixelArt)
+      love.graphics.setFont(pixelFont)
+      love.graphics.setColor(color.black)
+      love.graphics.print("█", game.cursorx, game.cursory)
+      print("store in pixelArt.." .. game.cursorx .. "," .. game.cursory)
+      love.graphics.setCanvas()
     end
 
   end
 
-  -- enter to clear screen messages
-  if key == "return" and game.message ~= "" then
-    game.message = ""
+  -- input while textmode == 1
+  if selected.textmode == 1 then
+
+    -- move cursor when R1 ("lalt") is not held
+    if not(love.keyboard.isDown("lalt")) then
+      if key == "up" and game.cursory > 1 then
+        game.cursory = game.cursory - 2
+      end
+      if key == "down" and game.cursory < ((game.canvasy-1)*2) then
+        game.cursory = game.cursory + 2
+      end
+      if key == "left" and game.cursorx > 1 then
+        game.cursorx = game.cursorx - 1
+      end
+      if key == "right" and game.cursorx < (game.canvasx) then
+        game.cursorx = game.cursorx + 1
+      end
+    end
+
+    -- draw char at cursor
+    if key == "return" and game.message == "" then
+      ansiArt[math.ceil(game.cursory/2)][(game.cursorx*2)-1] = selected.color
+      ansiArt[math.ceil(game.cursory/2)][game.cursorx*2] = selected.char
+
+      -- store selected in pixelArt
+      love.graphics.setCanvas(pixelArt)
+      love.graphics.setFont(pixelFont)
+      love.graphics.setColor(selected.color)
+      love.graphics.print(selected.char, game.cursorx, math.ceil(game.cursory/2))
+      print("store in pixelArt.." .. game.cursorx .. "," .. math.ceil(game.cursory/2))
+      love.graphics.setCanvas()
+
+    end
+
+    -- delete char at cursor
+    if key == "space" then
+      ansiArt[math.ceil(game.cursory/2)][(game.cursorx*2)-1] = color.darkgrey
+      ansiArt[math.ceil(game.cursory/2)][game.cursorx*2] = " "
+
+      -- store selected in pixelArt (only works for black background)
+      love.graphics.setCanvas(pixelArt)
+      love.graphics.setFont(pixelFont)
+      love.graphics.setColor(color.black)
+      love.graphics.print("█", game.cursorx, math.ceil(game.cursory/2))
+      print("store in pixelArt.." .. game.cursorx .. "," .. math.ceil(game.cursory/2))
+      love.graphics.setCanvas()
+
+      if game.cursorx > 1 then
+        -- not at the first column, shift game cursor backwards
+        game.cursorx = game.cursorx - 1
+      end
+    end
+
   end
 
-  if key == "f2" then
-    game.scene = "draw"
-    loadData()
+  -- use A button "return" to clear game messages
+  if game.message ~= "" then
+    if key == "return" then
+      game.message = ""
+    end
   end
 
-  if key == "f3" then
-    bmpFiles = love.filesystem.getDirectoryItems( "bmp" )
-    print(#bmpFiles.." files in bmp folder")
-    table.sort(bmpFiles)
-  end
-
-  if key == "f8" then
-    local files = love.filesystem.getDirectoryItems( "quicksave" )
-    saveData("quicksave_"..(#files)..".xtui","quicksave") -- running numbers for quicksaves
-  end
-
-  if key == "f12" then
-    -- toggle fullscreen
-      fullscreen = not fullscreen
-			love.window.setFullscreen(fullscreen, "exclusive")
-
-  end
 end
 
 function love.mousepressed( x, y, button, istouch, presses )
@@ -1431,7 +1394,6 @@ function love.mousepressed( x, y, button, istouch, presses )
 end
 
 function love.touchpressed(id, x, y, dx, dy, pressure)
-  overlayStats.handleTouch(id, x, y, dx, dy, pressure) -- Should always be called last
 end
 
 --[[ To-Dos
