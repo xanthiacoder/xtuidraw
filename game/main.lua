@@ -97,9 +97,9 @@ hover[15][6] = "desk and something"
 hover[1][31] = "hole in the wall"
 
 local click = {}
-for i = 1,90 do
+for i = 1,160 do -- number of columns (x)
   click[i] = {}
-  for j = 1,160 do
+  for j = 1,90 do -- number of rows (y)
     click[i][j] = ""
   end
 end
@@ -130,6 +130,9 @@ local game = {}
 -- set game timers
 game.timeThisSession = 0
 game.autosaveCooldown = 0
+
+-- set game flags (editor)
+game.insertMode = false
 
 -- set game message
 game.message = ""
@@ -968,7 +971,6 @@ function love.draw()
     love.graphics.print(hover[game.mousex][game.mousey],(game.mousex*FONT2X_WIDTH)+2,((game.mousey+2)*FONT2X_HEIGHT)+2)
     -- draw hover text
     love.graphics.setColor(color.white)
-    love.graphics.draw(pointer, love.mouse.getX(), love.mouse.getY())
     love.graphics.print(hover[game.mousex][game.mousey],game.mousex*FONT2X_WIDTH,(game.mousey+2)*FONT2X_HEIGHT)
 
     -- draw click - text message
@@ -976,6 +978,11 @@ function love.draw()
       drawMessage( game.message, game.messageViewport )
     end
   end
+
+  -- draw pointer
+  love.graphics.setColor(color.white)
+  love.graphics.draw(pointer, love.mouse.getX(), love.mouse.getY())
+
 
   if game.scene == "title" then
     -- draw full screens last
@@ -1061,7 +1068,7 @@ function love.update(dt)
   game.statusbar = game.cursorx..","..game.cursory.." ("..game.mousex..","..game.mousey..") Time:"..math.floor(game.timeThisSession)
   if game.os ~= "R36S" then
     -- statusbar for all other platforms
-    game.statusbar = game.statusbar .. " ["..game.os.."] | " .. game.mode
+    game.statusbar = game.statusbar .. " ["..game.os.."] | " .. game.mode .. " | Insert:" .. tostring(game.insertMode)
   else
     -- statusbar for R36S
     game.statusbar = game.statusbar .. " ["..game.os.."] L1:Change Color R1:Change Viewport"
@@ -1072,7 +1079,7 @@ end
 
 function love.keypressed(key, scancode, isrepeat)
   print("key:"..key.." scancode:"..scancode.." isrepeat:"..tostring(isrepeat))
-  if key == "escape" and love.system.getOS() ~= "Web" then
+  if key == "escape" and love.system.getOS() ~= "Web" and game.insertMode == false then
     love.event.quit()
   else
 --    overlayStats.handleKeyboard(key) -- Should always be called last
@@ -1153,6 +1160,16 @@ function love.keypressed(key, scancode, isrepeat)
       saveData("quicksave_"..(#files)..".xtui","quicksave") -- running numbers for quicksaves
     end
 
+    -- L1 (l) to toggle colors (for testing)
+    if key == "l" then
+      if game.colorSelected == 15 then
+        game.colorSelected = 0
+      else
+        game.colorSelected = game.colorSelected + 1
+      end
+      selected.color = color[game.colorSelected]
+    end
+
   else
     -- input for everything else (computers)
 
@@ -1172,42 +1189,80 @@ function love.keypressed(key, scancode, isrepeat)
       end
     end
 
-    -- toggle game mode "play" , "edit"
-    if key == "m" or key == "M" then
-      if game.mode == "play" then
-        game.mode = "edit"
+    -- checking game.insertMode for keyboard entry
+    if game.insertMode == false then
+
+      -- toggle game mode "play" , "edit"
+      if (key == "m" or key == "M") then
+        if game.mode == "play" then
+          game.mode = "edit"
+        else
+          game.mode = "play"
+        end
+      end
+
+      -- "[" / "]" to increase / decrease canvas size (x)
+      if key == "[" and game.canvasx > 1 then
+        game.canvasx = game.canvasx - 1
+        pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
+      end
+      if key == "]" and game.canvasx < MAX_CANVAS_X then
+        game.canvasx = game.canvasx + 1
+        pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
+      end
+
+      -- ";" / "'" to increase / decrease canvas size (y)
+      if key == ";" and game.canvasy > 1 then
+        game.canvasy = game.canvasy - 1
+        pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
+      end
+      if key == "'" and game.canvasy < MAX_CANVAS_Y then
+        game.canvasy = game.canvasy + 1
+        pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
+      end
+
+      -- "/" to toggle solid background color
+      if key == "/" then
+        game.bgcolorSelected = game.bgcolorSelected + 1
+        if game.bgcolorSelected == 17 then
+          game.bgcolorSelected = 0
+        end
+      end
+
+      -- clear canvas
+      if key == "c" then
+        clearCanvas()
+      end
+
+      -- toggle textmode
+      if key == "=" then
+        if selected.textmode == 2 then
+          selected.textmode = 1
+        else
+          selected.textmode = 2
+        end
+      end
+
+      if key == "i" then
+        game.insertMode = true
+      end
+
+    else
+      -- game.insertMode == true
+      if key == "escape" then
+        game.insertMode = false
       else
-        game.mode = "play"
+        if #key == 1 then -- single char only
+          ansiArt[game.cursory][(game.cursorx*2)-1] = selected.color
+          ansiArt[game.cursory][game.cursorx*2] = key
+        end
+        if game.cursorx < game.canvasx then -- not at canvas edge yet, can move cursorx
+          game.cursorx = game.cursorx + 1
+        end
+
       end
-    end
 
-    -- "[" / "]" to increase / decrease canvas size (x)
-    if key == "[" and game.canvasx > 1 then
-      game.canvasx = game.canvasx - 1
-      pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
-    end
-    if key == "]" and game.canvasx < MAX_CANVAS_X then
-      game.canvasx = game.canvasx + 1
-      pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
-    end
-
-    -- ";" / "'" to increase / decrease canvas size (y)
-    if key == ";" and game.canvasy > 1 then
-      game.canvasy = game.canvasy - 1
-      pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
-    end
-    if key == "'" and game.canvasy < MAX_CANVAS_Y then
-      game.canvasy = game.canvasy + 1
-      pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
-    end
-
-    -- "\" to toggle solid background color
-    if key == "/" then
-      game.bgcolorSelected = game.bgcolorSelected + 1
-      if game.bgcolorSelected == 17 then
-        game.bgcolorSelected = 0
-      end
-    end
+    end -- game.insertMode check
 
 
     -- ralt (right option) to draw char
@@ -1217,8 +1272,16 @@ function love.keypressed(key, scancode, isrepeat)
     end
     -- backspace to delete char
     if key == "backspace" then
-      ansiArt[game.cursory][(game.cursorx*2)-1] = color.darkgrey
-      ansiArt[game.cursory][game.cursorx*2] = " "
+      if game.textmode == 2 then
+        ansiArt[game.cursory][(game.cursorx*2)-1] = color.darkgrey
+        ansiArt[game.cursory][game.cursorx*2] = " "
+        if game.cursorx > 1 then
+          -- not at the first column, shift game cursor backwards
+          game.cursorx = game.cursorx - 1
+        end
+      else -- game.textmode == 1
+        -- do deletion for monoFont spacing
+      end
     end
     -- lalt to eyedrop char
     if key == "lalt" then
@@ -1228,8 +1291,9 @@ function love.keypressed(key, scancode, isrepeat)
     if key == "lctrl" then
       selected.color = ansiArt[game.cursory][(game.cursorx*2)-1]
     end
+
     -- char selection with rshift held, and WASD for selecting
-    if love.keyboard.isDown("rshift") then
+    if love.keyboard.isDown("rshift") and game.insertMode == false then
       -- w / s to select charTable row (game.chary)
       if key == "w" and game.chary > 1 then
         game.chary = game.chary - 1
@@ -1250,30 +1314,6 @@ function love.keypressed(key, scancode, isrepeat)
       end
     end
 
-    -- L1 (l) to toggle colors (for testing)
-    if key == "l" then
-      if game.colorSelected == 15 then
-        game.colorSelected = 0
-      else
-        game.colorSelected = game.colorSelected + 1
-      end
-      selected.color = color[game.colorSelected]
-    end
-
-  end
-
-  -- clear canvas
-  if key == "c" then
-    clearCanvas()
-  end
-
-  -- toggle textmode
-  if key == "=" then
-    if selected.textmode == 2 then
-      selected.textmode = 1
-    else
-      selected.textmode = 2
-    end
   end
 
   -- enter to clear screen messages
@@ -1285,7 +1325,6 @@ function love.keypressed(key, scancode, isrepeat)
     game.scene = "draw"
     loadData()
   end
-
 
   if key == "f3" then
     bmpFiles = love.filesystem.getDirectoryItems( "bmp" )
