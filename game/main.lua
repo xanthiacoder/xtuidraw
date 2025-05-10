@@ -90,16 +90,16 @@ down - down
 left - left
 right - right
 
-L1 - lctrl
+L1 - lctrl (toggle bitmap)
 L2 - right mouse click
 
-R1 - lalt
+R1 - lalt (arrows - select char)
 L2 - left mouse click
 
-L4 - lshift
+L4 - lshift (quicksave)
 L5 - lgui
 
-R4 - pageup
+R4 - pageup (WASD canvas size)
 R5 - pagedown
 
 ]]
@@ -136,6 +136,15 @@ local charTable = {
   [17] = {string.char(25),string.char(26),string.char(27),string.char(28),string.char(29),string.char(30),string.char(31),string.char(32),string.char(33),string.char(34),string.char(35),},
 }
 
+
+-- first item is the menu category, the rest are the category's options
+local menuTable = {
+  [1] = {"File"    , "Load" , "Save" , "Quit" },
+  [2] = {"Game"    , "Edit" , "Play" },
+  [3] = {"Scene"   , "Edit" , "Play" , "Jump" },
+  [4] = {"Options" , "Sound", "Zoom" , "Help" },
+}
+
 local selected = {
   color = color.white,
   char  = "█",
@@ -143,6 +152,8 @@ local selected = {
   bmpnumber = 1,
   viewport = 1,
   textmode = 2, -- 1 = 8x16, 2 = 8x8
+  menuRow = 0, -- nothing selected
+  menuOption = 0, -- nothing selected (menuItemselects item on menuTable)
 }
 
 -- cursor text to display when hovering over a fixed 8x8 coordinate
@@ -210,8 +221,8 @@ game.playery = 31 -- MUST be odd number
 game.playerChar = "P"
 
 -- set default canvas size (16x16)
-game.canvasx = 16
-game.canvasy = 16
+game.canvasx = 80
+game.canvasy = 60
 
 -- init pixelArt canvas
 local pixelArt = love.graphics.newCanvas( game.canvasx, game.canvasy )
@@ -223,6 +234,10 @@ game.chary = 1
 -- set default color number selected
 game.colorSelected = 15
 game.bgcolorSelected = 0 -- 16 is transparent, 0-15 is solid color
+
+-- set showBitmap
+game.showBitmap = false
+game.showCloseup = false
 
 -- detect system OS
 game.os = love.system.getOS() -- "OS X", "Windows", "Linux", "Android" or "iOS"
@@ -642,7 +657,7 @@ function drawArtCanvas(textmode, bgcolor)
   end
 
   -- draw the bitmap image to be traced
-  if bitmap ~= nil and not(love.keyboard.isDown("lctrl")) then -- hold L1 to make bitmap disappear
+  if game.showBitmap then -- L1 (steam deck desktop) "lctrl" to toggle
     love.graphics.setColor( color.white )
     love.graphics.draw( bitmap, 0, 0, 0, 1, 1 ) -- rotation=0, scalex=1, scaley=1
   end
@@ -887,6 +902,57 @@ function drawBrushes( x, y )
 end
 
 
+function drawMenu()
+  local menuWidth = 2 -- menu category padding
+  local optionsPadding = 0 -- menu options padding
+  local blinking = {}
+  -- make it blinking with alpha
+  if(math.floor(game.timeThisSession))%2 == 1 then
+    blinking = {1,0,0,1} -- red
+  else
+    blinking = {0.75,0.75,0.75,1} -- bright grey
+  end
+  love.graphics.setFont(monoFont)
+  love.graphics.setColor(color.white)
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle("fill", 0, 0, 80*FONT_WIDTH, 1*FONT_HEIGHT) -- top menu background
+  love.graphics.setColor(color.black)
+
+  -- print menu categories
+  for i = 1,#menuTable do
+    if selected.menuRow == i then
+      love.graphics.setColor(blinking)
+      love.graphics.print("►",(menuWidth-1)*FONT_WIDTH,0)
+      optionsPadding = menuWidth-2
+    end
+    love.graphics.setColor(color.black)
+    love.graphics.print(menuTable[i][1],menuWidth*FONT_WIDTH, 0)
+    menuWidth = menuWidth + #menuTable[i][1] + 2 -- padding
+  end
+
+  -- determine longest menu item length
+  local maxCharLength = 0
+  for i = 2,#menuTable[selected.menuRow] do
+    if #menuTable[selected.menuRow][i] > maxCharLength then
+      maxCharLength = #menuTable[selected.menuRow][i]
+    end
+  end
+
+  -- draw menu options
+  for i = 2,#menuTable[selected.menuRow] do
+    love.graphics.setColor(color.white)
+    love.graphics.rectangle("fill", optionsPadding*FONT_WIDTH, (i-1)*FONT_HEIGHT, (maxCharLength+4)*FONT_WIDTH, 1*FONT_HEIGHT)
+    if selected.menuOption == i then
+      love.graphics.setColor(blinking)
+      love.graphics.print("►",(optionsPadding+1)*FONT_WIDTH,(i-1)*FONT_HEIGHT)
+    end
+    love.graphics.setColor(color.blue)
+    love.graphics.print(menuTable[selected.menuRow][i], (optionsPadding+2)*FONT_WIDTH, (i-1)*FONT_HEIGHT)
+  end
+
+end
+
+
 function love.draw()
   -- Your game draw here (from bottom to top layer)
 
@@ -905,15 +971,15 @@ function love.draw()
     end
 
   -- draw tooltip
-  local tooltip = "C - clear canvas\n"
+  local tooltip = "? - clear canvas\n"
   tooltip = tooltip .. "= - toggle textmode "..selected.textmode.."\n"
-  tooltip = tooltip .. "m - change between play and edit mode\n"
-  tooltip = tooltip .. "[ ] - change canvas width "..game.canvasx.."\n"
-  tooltip = tooltip .. "; ' - change canvas height "..game.canvasy.."\n"
-  tooltip = tooltip .. "/ - change background color "..game.bgcolorSelected.."\n"
-  tooltip = tooltip .. "right-shift + WASD - select char\n"
-  tooltip = tooltip .. "F8 - quicksave\n"
-  tooltip = tooltip .. "ESC - quit\n"
+  tooltip = tooltip .. "? - change between play and edit mode\n"
+  tooltip = tooltip .. "R4 + D-Pad - change canvas width "..game.canvasx.."\n"
+  tooltip = tooltip .. "R4 + D-Pad - change canvas height "..game.canvasy.."\n"
+  tooltip = tooltip .. "? - change background color "..game.bgcolorSelected.."\n"
+  tooltip = tooltip .. "R1 + D-Pad - select char\n"
+  tooltip = tooltip .. "L4 - quicksave\n"
+  tooltip = tooltip .. "? - quit\n"
   love.graphics.setFont(monoFont)
   love.graphics.setColor(color.white)
   love.graphics.printf(tooltip, 640+(40*FONT_WIDTH), (29-8)*FONT_HEIGHT, 320, "left")
@@ -999,7 +1065,9 @@ function love.draw()
   end
 
   -- draw cursor closeup
-  drawCloseup()
+  if game.showCloseup then
+    drawCloseup()
+  end
 
   -- draw buttons
   drawButtons()
@@ -1029,6 +1097,10 @@ function love.draw()
   love.graphics.setColor(color.white)
   love.graphics.draw(pointer, love.mouse.getX(), love.mouse.getY())
 
+
+  if selected.menuRow ~= 0 then
+    drawMenu()
+  end
 
   if game.scene == "title" then
     -- draw full screens last
@@ -1131,6 +1203,37 @@ function love.keypressed(key, scancode, isrepeat)
 
   -- steam deck desktop mode inputs
 
+  -- "escape" START or B button showing menu
+  if key == "escape" then
+    selected.menuRow = 1
+    selected.menuOption = 2
+  end
+
+  -- "lctrl" button L1 to toggle showing bitmap
+  if key == "lctrl" then
+    if game.showBitmap then
+      game.showBitmap = false
+    else
+      game.showBitmap = true
+    end
+  end
+
+  -- move menu selection after escape is pressed
+  if selected.menuRow ~= 0 then
+    if key == "up" and selected.menuOption > 2 then
+      selected.menuOption = selected.menuOption - 1
+    end
+    if key == "down" and selected.menuOption < #menuTable[selected.menuRow] then
+      selected.menuOption = selected.menuOption + 1
+    end
+    if key == "left" and selected.menuRow > 1 then
+      selected.menuRow = selected.menuRow - 1
+    end
+    if key == "right" and selected.menuRow < #menuTable then
+      selected.menuRow = selected.menuRow + 1
+    end
+  end
+
   -- "lshift" button L4 for quicksave
   if key == "lshift" then
     local files = love.filesystem.getDirectoryItems( "quicksave" )
@@ -1194,8 +1297,8 @@ function love.keypressed(key, scancode, isrepeat)
   -- input while textmode == 2
   if selected.textmode == 2 then
 
-    -- move cursor when R1 ("lalt") is not held
-    if not(love.keyboard.isDown("lalt")) then
+    -- move cursor when R1 ("lalt") is not held and not menu selection
+    if not(love.keyboard.isDown("lalt")) and selected.menuRow == 0 then
       if key == "up" and game.cursory > 1 then
         game.cursory = game.cursory - 1
       end
@@ -1247,8 +1350,8 @@ function love.keypressed(key, scancode, isrepeat)
   -- input while textmode == 1
   if selected.textmode == 1 then
 
-    -- move cursor when R1 ("lalt") is not held
-    if not(love.keyboard.isDown("lalt")) then
+    -- move cursor when R1 ("lalt") is not held, and not menu selection
+    if not(love.keyboard.isDown("lalt")) and selected.menuRow == 0 then
       if key == "up" and game.cursory > 1 then
         game.cursory = game.cursory - 2
       end
@@ -1298,6 +1401,8 @@ function love.keypressed(key, scancode, isrepeat)
     end
 
   end
+
+
 
   -- use A button "return" to clear game messages
   if game.message ~= "" then
