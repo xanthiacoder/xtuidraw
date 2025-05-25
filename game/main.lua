@@ -1228,9 +1228,11 @@ function love.keypressed(key, scancode, isrepeat)
     end
     if key == "left" and selected.menuRow > 1 then
       selected.menuRow = selected.menuRow - 1
+      selected.menuOption = 2
     end
     if key == "right" and selected.menuRow < #menuTable then
       selected.menuRow = selected.menuRow + 1
+      selected.menuOption = 2
     end
   end
 
