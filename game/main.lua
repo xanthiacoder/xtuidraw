@@ -972,13 +972,14 @@ function love.draw()
 
   -- draw tooltip
   local tooltip = "? - clear canvas\n"
-  tooltip = tooltip .. "= - toggle textmode "..selected.textmode.."\n"
+  tooltip = tooltip .. "Tab - toggle textmode "..selected.textmode.."\n"
+  tooltip = tooltip .. "Lctrl - toggle bitmap\n"
   tooltip = tooltip .. "? - change between play and edit mode\n"
-  tooltip = tooltip .. "R4 + D-Pad - change canvas width "..game.canvasx.."\n"
-  tooltip = tooltip .. "R4 + D-Pad - change canvas height "..game.canvasy.."\n"
+  tooltip = tooltip .. "Lalt + arrows - change brush\n"
+  tooltip = tooltip .. "Ralt + arrows - change canvas size "..game.canvasx .. "," .. game.canvasy.."\n"
   tooltip = tooltip .. "? - change background color "..game.bgcolorSelected.."\n"
   tooltip = tooltip .. "R1 + D-Pad - select char\n"
-  tooltip = tooltip .. "L4 - quicksave\n"
+  tooltip = tooltip .. "Lshift - quicksave\n"
   tooltip = tooltip .. "? - quit\n"
   love.graphics.setFont(monoFont)
   love.graphics.setColor(color.white)
@@ -1243,8 +1244,8 @@ function love.keypressed(key, scancode, isrepeat)
     game.message = "Quicksaved - " .. "quicksave_"..(#files)..".xtui"
   end
 
-  -- R4 button "pageup" + arrow keys to change canvas size
-  if love.keyboard.isDown("pageup") then
+  -- right alt + arrow keys to change canvas size
+  if love.keyboard.isDown("ralt") then
     -- arrow keys to select char
     if key == "up" and game.canvasy > 1 then
       game.canvasy = game.canvasy - 1
